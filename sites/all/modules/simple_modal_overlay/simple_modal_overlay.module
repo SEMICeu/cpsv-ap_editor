@@ -1,0 +1,55 @@
+<?php
+/**
+ * @file
+ *   Core code for the "Simple modal overlay" module.
+ * 
+ *   © 2014-2015 RedBottle Design, LLC and Inveniem. All rights reserved.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function simple_modal_overlay_theme($existing, $type, $theme, $path) {
+  $theme_functions = array();
+
+  $theme_functions['simple_modal_overlay'] = array(
+    'variables' => array(
+      'title'       => NULL,
+      'content'     => NULL,
+      'dismissible' => TRUE),
+    'file'      => 'simple_modal_overlay.theme.inc',
+  );
+
+  return $theme_functions;
+}
+
+/**
+ * Displays the provided content in an overlay.
+ * 
+ * @param string $title
+ *  The translated title for the overlay.
+ * 
+ * @param string $content
+ *  The content to display in the overlay, as translated text, HTML, or a render
+ *  array.
+ *
+ * @param boolean $dismissible
+ *   Whether or not the user can dismiss the overlay by clicking a close link in
+ *   the overlay. The default is TRUE.
+ */
+function simple_modal_overlay_show($title, $content, $dismissible = TRUE) {
+  $output
+    = theme(
+      'simple_modal_overlay',
+      array(
+        'title'       => $title,
+        'content'     => $content,
+        'dismissible' => $dismissible,
+      ));
+
+  /* Yup. You can pass anything you want for the second parameter of
+   * drupal_set_message (message type) as long as the theme doesn't break.
+   */
+  drupal_set_message($output, 'simple-overlay');
+}
+

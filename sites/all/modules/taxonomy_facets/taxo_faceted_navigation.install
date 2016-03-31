@@ -1,0 +1,14 @@
+<?php
+/**
+ * @file
+ * Install, update, and uninstall functions for Taxo faceted Navigation module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function taxo_faceted_navigation_uninstall() {
+  // Delete all the taxo faceted variables and then clear the variable cache.
+  db_query("DELETE FROM {variable} WHERE name LIKE 'taxo_faceted_navigation%'");
+  cache_clear_all('variables', 'cache');
+}

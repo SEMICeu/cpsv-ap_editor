@@ -1,0 +1,119 @@
+<?php
+/**
+ * @file
+ * Provide groups on flexiform.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function flexiform_element_group_menu() {
+  $items["admin/structure/flexiforms/manage/%/form-fields/groups/%field_group_menu/delete"] = array(
+    'load arguments' => array('flexiform', 4, '4', '%map'),
+    'title' => 'Delete',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('field_group_delete_form', 7),
+    'type' => MENU_CALLBACK,
+    'file' => 'field_group.field_ui.inc',
+    'file path' => drupal_get_path('module', 'field_group'),
+    'access callback' => TRUE,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_form_field_group_delete_form_alter().
+ */
+function flexiform_element_group_form_field_group_delete_form_alter(&$form, &$form_state) {
+  if ($form['#group']->entity_type == 'flexiform') {
+    $form['#redirect'] = array(
+      0 => "admin/structure/flexiforms/manage/{$form['#group']->bundle}/form-fields",
+    );
+  }
+}
+
+/**
+ * Implements hook_form_flexiform_manage_form_fields_form_alter().
+ */
+function flexiform_element_group_form_flexiform_manage_form_fields_form_alter(&$form, &$form_state) {
+  form_load_include($form_state, 'inc', 'flexiform_element_group', 'flexiform_element_group.admin');
+  flexiform_element_group_manage_form_fields_form_alter($form, $form_state);
+}
+
+/**
+ * Implements hook_flexiform_build_alter().
+ */
+function flexiform_element_group_flexiform_build_alter(&$form, &$form_state, $flexiform) {
+  if ($flexiform->builder != 'FlexiformBuilderFlexiform') {
+    return;
+  }
+
+  // Dirty hack.
+  $form['#entity_type'] = 'flexiform';
+  $form['#bundle'] = $flexiform->form;
+
+  field_group_attach_groups($form, 'form', $form_state);
+
+  // Field Group >= 7.x-1.2 moved most of its rendering work to a pre render
+  // function so we add this to the form. To maintain compatibility with older
+  // versions of field group we only add it if the function exists.
+  if (function_exists('field_group_form_pre_render')) {
+    $form['#pre_render'][] = 'field_group_form_pre_render';
+  }
+}
+
+/**
+ * Implements hook_form_flexiform_form_alter().
+ */
+function flexiform_element_group_form_flexiform_form_alter(&$form, &$form_state) {
+  if ($form_state['op'] !== 'clone') {
+    return;
+  }
+
+  $flexiform = $form['#flexiform'];
+  if ($flexiform->builder != 'FlexiformBuilderFlexiform') {
+    return;
+  }
+
+  $form['#submit'][] = 'flexiform_element_group_flexiform_form_clone_groups_submit';
+}
+
+/**
+ * Form submission handler to clone all the form groups.
+ */
+function flexiform_element_group_flexiform_form_clone_groups_submit($form, &$form_state) {
+  $original = $form['#cloned_from'];
+  $flexiform = $form['#flexiform'];
+
+  flexiform_element_group_clone_groups($original, $flexiform->form);
+}
+
+/**
+ * Clone the groups between two flexiforms.
+ *
+ * @param string $original
+ *   The machine name of the original flexiform.
+ * @param string $new
+ *   The machine name of the new flexiform.
+ */
+function flexiform_element_group_clone_groups($original, $new) {
+  $groups = field_group_info_groups('flexiform', $original, 'form');
+
+  // Prepare storage with ctools.
+  ctools_include('export');
+
+  foreach ($groups as $group) {
+    $new_group = clone $group;
+    unset($new_group->id);
+    unset($new_group->table);
+    unset($new_group->export_type);
+    unset($new_group->type);
+    $new_group->bundle = $new;
+    $new_group->identifier = "{$new_group->group_name}|flexiform|{$new}|form";
+
+    // Save and enable it in ctools
+    ctools_export_crud_save('field_group', $new_group);
+    ctools_export_crud_enable('field_group', $new_group->identifier);
+  }
+}

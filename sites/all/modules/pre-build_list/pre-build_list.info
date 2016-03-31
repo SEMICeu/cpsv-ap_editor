@@ -1,0 +1,3 @@
+name = pre-build_list
+description = Add pre-build list from database
+core = 7.x

@@ -1,0 +1,54 @@
+<?php
+/**
+ * @file
+ * Module file for creating CTools multi-step forms with Flexiform.
+ */
+
+/**
+ * Implements hook_form_FORM_ID_alter() for flexiform_manage_form_fields_form().
+ */
+function flexiform_multistep_form_flexiform_manage_form_fields_form_alter(&$form, &$form_state, $form_id) {
+  form_load_include($form_state, 'inc', 'flexiform_multistep', 'flexiform_multistep.admin');
+  _flexiform_multistep_form_flexiform_manage_form_fields_form_alter($form, $form_state, $form_id);
+}
+
+/**
+ * Implements hook_field_group_format_settings().
+ */
+function flexiform_multistep_field_group_format_settings($group) {
+  if ($group->entity_type == 'flexiform' && $group->format_type == 'flexiform_step') {
+    module_load_include('inc', 'flexiform_multistep', 'flexiform_multistep.admin');
+    return _flexiform_multistep_field_group_format_settings($group);
+  }
+}
+
+/**
+ *  Implements hook_field_group_formatter_info().
+ */
+function flexiform_multistep_field_group_formatter_info() {
+  return array(
+    'form' => array(
+      'flexiform_step' => array(
+        'label' => t('Flexiform Page'),
+        'description' => t('A server side page in a Flexiform. Note: Only compatible with Flexiforms.'),
+        'instance_settings' => array(
+          'save_entities' => NULL,
+          'save_entities_custom' => NULL,
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ *  Implements hook_flexiform_wrapper_alter().
+ */
+function flexiform_multistep_flexiform_wrapper_alter(&$wrapper, FlexiformDisplayInterface $display, $context) {
+  $flexiform = $display->getFlexiform();
+  $settings = isset($flexiform->settings['flexiform_multistep']) ? $flexiform->settings['flexiform_multistep'] : array();
+
+  if (!empty($settings['enabled'])) {
+    $wrapper = 'flexiform_multistep_wrapper';
+    module_load_include('inc', 'flexiform_multistep', 'flexiform_multistep.pages');
+  }
+}

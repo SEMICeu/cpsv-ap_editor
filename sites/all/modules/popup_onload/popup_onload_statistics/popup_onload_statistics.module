@@ -1,0 +1,141 @@
+<?php
+
+/**
+ * @file
+ * Main popup on loadvertisement statistics functions.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function popup_onload_statistics_theme($existing, $type, $theme, $path) {
+  $items = array(
+    'popup_onload_statistics_table' => array(
+      'variables' => array('stats' => NULL),
+      'file' => 'popup_onload_statistics.theme.inc',
+    ),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_entity_delete().
+ */
+function popup_onload_statistics_entity_delete($entity, $type) {
+  if ($type == 'popup_onload') {
+    db_delete('popup_onload_statistics')
+      ->condition('popup_id', $entity->popup_id)
+      ->execute();
+  }
+}
+
+/**
+ * Implements hook_init().
+ */
+function popup_onload_statistics_init() {
+  // Check if popup is added, and thus we need to add statistics JS.
+  if (drupal_static(POPUP_ONLOAD_IS_POPUP_ADDED)) {
+    popup_onload_statistics_add_js();
+  }
+}
+
+/**
+ * Add popup statistics JS to the page.
+ */
+function popup_onload_statistics_add_js() {
+  drupal_add_js(drupal_get_path('module', 'popup_onload_statistics') . '/popup_onload_statistics.js');
+}
+
+/**
+ * Implements hook_menu().
+ */
+function popup_onload_statistics_menu() {
+  $items = array();
+
+  $items['popup_onload_stats_log'] = array(
+    'title' => 'Popup statistics AJAX gate',
+    'page callback' => 'popup_onload_statistics_log',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['admin/reports/popup-statistics'] = array(
+    'title' => 'Popup statistics',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('popup_onload_statistics_admin_form'),
+    'file' => 'popup_onload_statistics.admin.inc',
+    'access arguments' => array('access site reports'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * AJAX gate for popup statistics logging.
+ */
+function popup_onload_statistics_log() {
+  $post = drupal_get_query_parameters($_POST);
+  array_map('check_plain', $post);
+
+  $action_type = $post['atype'];
+  $popup_id = $post['popup_id'];
+
+  $record = new stdClass();
+  $record->type = $action_type;
+  $record->popup_id = $popup_id;
+  $record->atime = time();
+
+  drupal_write_record('popup_onload_statistics', $record);
+
+  drupal_json_output(array('status' => 1));
+}
+
+/**
+ * Fetch statistics from the database.
+ */
+function popup_onload_statistics_get_stats($date_from = NULL, $date_to = NULL) {
+  $params = array();
+  $date_sql = '';
+
+  if (!is_null($date_from)) {
+    $date_sql .= "AND sps.atime >= :date_from ";
+    $params[':date_from'] = $date_from;
+  }
+  if (!is_null($date_to)) {
+    $date_sql .= "AND sps.atime <= :date_to ";
+    $params[':date_to'] = $date_to;
+  }
+
+  $query = db_select('popup_onload', 'p');
+  $query->leftJoin('popup_onload_statistics', 'sps', 'sps.popup_id = p.popup_id ' . $date_sql, $params);
+  $query->addExpression('COUNT(sps.type)', 'action_count');
+  $query
+    ->fields('p', array('name', 'popup_id'))
+    ->fields('sps', array('atime', 'type', 'aid'))
+    ->groupBy('popup_id')
+    ->groupBy('type')
+    ->orderBy('name');
+
+  $result = $query->execute()->fetchAll();
+
+  $stats = array();
+  $group_id = 0;
+  foreach ($result as $row) {
+    if ($row->popup_id != $group_id) {
+      $group_id = $row->popup_id;
+    }
+    $stats[$group_id]['popup_id'] = $row->popup_id;
+    $stats[$group_id]['name'] = $row->name;
+    if ($row->type) {
+      $stats[$group_id][$row->type] = $row->action_count;
+    }
+    else {
+      $stats[$group_id]['view'] = 0;
+      $stats[$group_id]['click'] = 0;
+    }
+  }
+
+  return $stats;
+}

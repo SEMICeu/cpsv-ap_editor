@@ -1,0 +1,613 @@
+<?php
+/**
+ * @file
+ * Module for the Flexiform system.
+ */
+
+/**
+ * Implements hook_hook_info().
+ */
+function flexiform_hook_info() {
+  $hooks['flexiform_group_info'] = array('group' => 'flexiform');
+  $hooks['flexiform_builder_info'] = array('group' => 'flexiform');
+  $hooks['flexiform_display_info'] = array('group' => 'flexiform');
+  $hooks['flexiform_element_info'] = array('group' => 'flexiform');
+  $hooks['flexiform_entity_getter_info'] = array('group' => 'flexiform');
+  $hooks['flexiform_submission_access'] = array('group' => 'flexiform');
+  $hooks['default_flexiform'] = array('group' => 'flexiform_default');
+  $hooks['default_flexiform_alter'] = array('group' => 'flexiform_default');
+  return $hooks;
+}
+
+/**
+ * Implements hook_menu()
+ *
+ * We want to add a manage form fields tab and a manage form entities tab
+ * for each flexiform
+ */
+function flexiform_menu() {
+  $items = array();
+
+  // @todo: Consider altering storage for displays so that this can be more performant.
+  $forms = entity_load('flexiform');
+  foreach ($forms as $form) {
+    $displays = flexiform_display_info();
+    foreach ($displays as $name => $info) {
+      if (method_exists($info['class'], 'hook_menu')) {
+        if (($display = $form->getDisplay($name)) && $display->isEnabled()) {
+          $items += $display->hook_menu();
+        }
+      }
+    }
+  }
+
+  return $items;
+}
+
+/**
+ * Implements hook_menu_alter()
+ *
+ * Allow displays to alter the menu.
+ */
+function flexiform_menu_alter(&$items) {
+  // @todo: Consider altering storage for displays so that this can be more performant.
+  $forms = entity_load('flexiform');
+  foreach ($forms as $form) {
+    $displays = flexiform_display_info();
+    foreach ($displays as $name => $info) {
+      if (method_exists($info['class'], 'hook_menu_alter')) {
+        if (($display = $form->getDisplay($name)) && $display->isEnabled()) {
+          $display->hook_menu_alter($items);
+        }
+      }
+    }
+  }
+
+  // Alter comment bits.
+  // Adjust the Field UI tabs on admin/structure/types/manage/[node-type].
+  // See comment_entity_info().
+  if (!empty($items['admin/structure/types/manage/%comment_node_type/comment/fields']['title'])) {
+    $items['admin/structure/types/manage/%comment_node_type/comment/fields']['title'] = 'Comment fields';
+    $items['admin/structure/types/manage/%comment_node_type/comment/fields']['weight'] = 4;
+  }
+  if (!empty($items['admin/structure/types/manage/%comment_node_type/comment/display']['title'])) {
+    $items['admin/structure/types/manage/%comment_node_type/comment/display']['title'] = 'Comment display';
+    $items['admin/structure/types/manage/%comment_node_type/comment/display']['weight'] = 5;
+  }
+  if (!empty($items['admin/structure/types/manage/%comment_node_type/comment/forms']['title'])) {
+    $items['admin/structure/types/manage/%comment_node_type/comment/forms']['title'] = 'Comment forms';
+    $items['admin/structure/types/manage/%comment_node_type/comment/forms']['weight'] = 6;
+  }
+}
+
+/**
+ * Implements hook_user_categories()
+ *
+ * Add any user categories being created by flexiforms.
+ */
+function flexiform_user_categories() {
+  $categories = array();
+
+  $forms = entity_load('flexiform');
+  foreach ($forms as $form) {
+    if (($display = $form->getDisplay('FlexiformDisplayUserCategory')) && $display->isEnabled()) {
+      $categories = array_merge($categories, $display->hook_user_categories());
+    }
+  }
+
+  return $categories;
+}
+
+/**
+ * Implement hook_entity_info().
+ *
+ * We define two entities here - the actual entity that will hold our domain
+ * specific information and an entity that holds information about the different
+ * types of entities. See here: http://drupal.org/node/977380 for a discussion on this
+ * choice.
+ */
+function flexiform_entity_info() {
+  // The entity that holds information about the entity types
+  $return['flexiform'] = array(
+    'label' => t('Flexible Form'),
+    'entity class' => 'Flexiform',
+    'controller class' => 'FlexiformController',
+    'base table' => 'flexiform',
+    'fieldable' => FALSE,
+    'exportable' => TRUE,
+    'entity keys' => array(
+      'id' => 'id',
+      'name' => 'form',
+      'label' => 'label',
+    ),
+    'access callback' => 'flexiform_access',
+    'module' => 'flexiform',
+    // Enable the entity API's admin UI.
+    'admin ui' => array(
+      'path' => 'admin/structure/flexiforms',
+      'file' => 'flexiform.admin.inc',
+      'controller class' => 'FlexiformUIController',
+    ),
+  );
+
+  return $return;
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function flexiform_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'flexiform') . '/includes/views',
+  );
+}
+
+/**
+ * Impements hook_ctools_plugin_directory().
+ */
+function flexiform_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'panelizer' && $plugin_type == 'entity') {
+    return "plugins/$plugin_type";
+  }
+
+  if ($owner == 'ctools' && $plugin_type == 'content_types') {
+    return "plugins/$plugin_type";
+  }
+}
+
+/**
+ * Implements hook_permission().
+ */
+function flexiform_permission() {
+  // We set up permisssions to manage entity types, manage all entities and the
+  // permissions for each individual entity
+  $permissions = array(
+    'administer flexiforms' => array(
+      'title' => t('Administer flexiforms'),
+      'description' => t('Create and delete fields for flexiforms, and set their permissions.'),
+    ),
+  );
+
+  return $permissions;
+}
+
+/**
+ * Access callback for the entity API.
+ */
+function flexiform_access($op, $type = NULL, $account = NULL) {
+  return user_access('administer flexiforms', $account);
+}
+
+/**
+ * Access callback for widget type form.
+ */
+function flexiform_field_widget_type_form_access($flexiform, $element_namespace) {
+  $element = FlexiformElement::getElement($flexiform, $element_namespace);
+  return ($element instanceof FlexiformElementFieldAPIInterface)
+  && user_access('administer flexiforms');
+}
+
+/**
+ * Gets an array of all flexiforms, keyed by the type name.
+ *
+ * @param $type_name
+ *   If set, the type with the given name is returned.
+ * @return Flexiform[]
+ *   Depending whether $type isset, an array of flexiforms or a single one.
+ */
+function flexiform_get_flexiforms($flexiform_name = NULL) {
+  // entity_load will get the Entity controller for our flexiform_submission entity and call the load
+  // function of that object - we are loading entities by name here.
+  $flexiforms = entity_load_multiple_by_name('flexiform', isset($flexiform_name) ? array($flexiform_name) : FALSE);
+  return isset($flexiform_name) ? reset($flexiforms) : $flexiforms;
+}
+
+/**
+ * Gets an array of all flexiforms with a given base_entity type and bundle.
+ *
+ * @param string $entity_type
+ *   The entity type of base entity.
+ * @param string $bundle
+ *   The bundle of the base entity.
+ *
+ * @return array
+ *   An array of flexiforms.
+ */
+function flexiform_get_base_entity_forms($entity_type, $bundle = FALSE) {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'flexiform');
+  $query->propertyCondition('base_entity', $entity_type);
+
+  if ($bundle) {
+    $query->propertyCondition('base_entity_bundle', $bundle);
+  }
+
+  $entities = $query->execute();
+
+  if (empty($entities['flexiform'])) {
+    return array();
+  }
+
+  return entity_load('flexiform', array_keys($entities['flexiform']));
+}
+
+/**
+ * Menu argument loader; Load a flexiform by string.
+ *
+ * @param $form
+ *   The machine-readable name of a flexiform to load.
+ *
+ * @return
+ *   A flexiform array or FALSE if $type does not exist.
+ */
+function flexiform_load($form) {
+  return flexiform_get_flexiforms($form);
+}
+
+/**
+ * Saves a flexiform to the db.
+ */
+function flexiform_save(Flexiform $form) {
+  $form->save();
+}
+
+/**
+ * Deletes a flexiform from the db.
+ */
+function flexiform_delete(Flexiform $form) {
+  $form->delete();
+}
+
+/**
+ * Split a namespace into entity and field name
+ */
+function flexiform_formfield_load($string) {
+  return $string;
+}
+
+/**
+ * Implement hook_theme().
+ */
+function flexiform_theme() {
+  return array(
+    'flexiform_field_table' => array(
+      'render element' => 'elements',
+    ),
+    'flexiform_entity_table' => array(
+      'render element' => 'elements',
+    ),
+    'flexiform_ui_overview_item' => array(
+      'variables' => array('label' => NULL, 'entity_type' => NULL, 'url' => FALSE, 'name' => FALSE, 'tags' => FALSE),
+      'file' => 'flexiform.admin.inc',
+    ),
+  );
+}
+
+/**
+ * Implements hook_forms().
+ */
+function flexiform_forms($form_id, $args) {
+  $forms = array();
+
+  $parts = explode('__', $form_id);
+  if ($parts[0] == 'flexiform') {
+    $forms[$form_id] = array(
+      'callback' => 'flexiform',
+    );
+  }
+
+  return $forms;
+}
+
+/**
+ * Implements hook_element_info().
+ */
+function flexiform_element_info() {
+  return array(
+    'flexiform_field_table' => array(
+      '#theme' => 'flexiform_field_table',
+      '#pre_render' => array('flexiform_field_table_pre_render'),
+      '#regions' => array('' => array()),
+    ),
+    'flexiform_entity_table' => array(
+      '#theme' => 'flexiform_entity_table',
+      '#pre_render' => array('flexiform_entity_table_pre_render'),
+      '#regions' => array('' => array()),
+    ),
+  );
+}
+
+/**
+ * Retreive a list of flexiform groups.
+ */
+function flexiform_get_groups() {
+  $groups = &drupal_static(__FUNCTION__, NULL);
+
+  if ($groups === NULL) {
+    $groups = module_invoke_all('flexiform_group_info');
+  }
+
+  return $groups;
+}
+
+/**
+ * Title Callback for Flexiform Submission Pages.
+ */
+function flexiform_page_title($flexiform, $display, $base_entity_id = NULL) {
+  if (!is_object($flexiform)) {
+    $flexiform = flexiform_load($flexiform);
+  }
+
+  if (!$flexiform) {
+    return FALSE;
+  }
+
+  $context = array(
+    'base_entity_id' => $base_entity_id,
+  );
+  return $flexiform->getDisplay($display)->title($context);
+}
+
+/**
+ * Implements hook_field_create_instance().
+ */
+function flexiform_field_create_instance() {
+  // Clear the element cache.
+  flexiform_get_element_info('','','', TRUE);
+}
+
+//-----------------------------------------------------------------------------
+// Flexiform Builder API
+
+/**
+ * Get info about all available builders.
+ */
+function flexiform_builder_info($builder = NULL) {
+  $builders = &drupal_static(__FUNCTION__, array());
+
+  if (empty($builders)) {
+    if ($cache = cache_get('flexiform:builder_info', 'cache')) {
+      $builders = $cache->data;
+    }
+    else {
+      $builders = array();
+      foreach (module_implements('flexiform_builder_info') as $module) {
+        // Due to http://drupal.org/node/890660 we can't use module_invoke_all()
+        // because we need to know the provenance of each set.
+        $builders_module = module_invoke($module, 'flexiform_builder_info');
+        foreach ($builders_module as $builder_name => $builder_info) {
+          $builder_info += array(
+            'class' => $builder_name,
+            'label' => $builder_name,
+            'module' => $module,
+            'entity_types' => array(),
+          );
+          $builders[$builder_name] = $builder_info;
+        }
+      }
+
+      // Alter the data sets with hook_party_data_set_info_alter().
+      drupal_alter('flexiform_builder_info', $builders);
+
+      cache_set('flexiform:builder_info', $builders);
+    }
+  }
+
+  if (!empty($builder)) {
+    return $builders[$builder];
+  }
+
+  return $builders;
+}
+
+/**
+ * Get the builders available for a particular base entity type.
+ */
+function flexiform_entity_type_get_builders($entity_type) {
+  // If this isn't an entity type return false
+  if (!entity_get_info($entity_type)) {
+    return FALSE;
+  }
+
+  $builders = flexiform_builder_info();
+  $applicable_builders = array();
+  foreach ($builders as $builder => $info) {
+    if (empty($info['entity_types'])
+      || in_array($entity_type, $info['entity_types'])) {
+      $applicable_builders[$builder] = $info;
+    }
+  }
+  return $applicable_builders;
+}
+
+//-----------------------------------------------------------------------------
+// Entity Getter and Setter API
+
+/**
+ * Get info about all entity getters
+ */
+function flexiform_entity_getter_info($getter = NULL) {
+  $getters = &drupal_static(__FUNCTION__);
+
+  if (!isset($getters)) {
+    if ($cache = cache_get('flexiform:entity_getter_info', 'cache')) {
+      $getters = $cache->data;
+    }
+    else {
+      $getters = array();
+      foreach (module_implements('flexiform_entity_getter_info') as $module) {
+        // Due to http://drupal.org/node/890660 we can't use module_invoke_all()
+        // because we need to know the provenance of each set.
+        $getters_module = module_invoke($module, 'flexiform_entity_getter_info');
+        foreach ($getters_module as $getter_name => $getter_info) {
+          $getter_info += array(
+            'params' => array(),
+            'module' => $module,
+          );
+          if (!isset($getter_info['class'])) {
+            $getter_info['class'] = 'FlexiformFormEntityLegacy';
+            $getter_info += array(
+              'getter callback' => 'flexiform_entity_getter_' . $getter_name,
+              'setter callback' => 'flexiform_entity_setter_' . $getter_name,
+              'file' => $module . '.flexiform.inc',
+            );
+          }
+          $getters[$getter_name] = $getter_info;
+        }
+      }
+
+      // Alter the data sets with hook_party_data_set_info_alter().
+      drupal_alter('flexiform_entity_getter_info', $getters);
+
+      cache_set('flexiform:entity_getter_info', $getters);
+    }
+  }
+
+  if (!empty($getter)) {
+    return $getters[$getter];
+  }
+
+  return $getters;
+}
+
+/**
+ * Get the getters for a particular entity type
+ */
+function flexiform_entity_type_get_getters($entity_type) {
+  // If this isn't an entity type return false
+  if (!entity_get_info($entity_type)) {
+    return FALSE;
+  }
+
+  $getters = flexiform_entity_getter_info();
+  $applicable_getters = array();
+  foreach ($getters as $getter => $info) {
+    if (in_array($entity_type, $info['entity_types'])) {
+      $applicable_getters[$getter] = $info;
+    }
+  }
+  return $applicable_getters;
+}
+
+//-----------------------------------------------------------------------------
+// Flexiform Element API
+
+/**
+ * Get information about flexiform elements.
+ */
+function flexiform_get_element_info($entity_type = '', $bundle = '', $name = '', $reset = FALSE) {
+  $elements = &drupal_static(__FUNCTION__);
+
+  if (!isset($elements) || $reset) {
+    if (($cache = cache_get('flexiform:element_info', 'cache')) && !$reset) {
+      $elements = $cache->data;
+    }
+    else {
+      $elements = array();
+      $elements = module_invoke_all('flexiform_element_info');
+
+      // Make sure the entity_type, bundle and name are set.
+      foreach ($elements as $entity_type_ => $elems) {
+        foreach ($elems as $bundle_ => $els) {
+          foreach ($els as $name_ => $element) {
+            $elements[$entity_type_][$bundle_][$name_] += array(
+              'entity_type' => $entity_type_,
+              'bundle' => $bundle_,
+              'name' => $name_,
+              'group' => 'Other',
+            );
+          }
+        }
+      }
+
+      // Alter the data sets with hook_party_data_set_info_alter().
+      drupal_alter('flexiform_element_info', $elements);
+
+      cache_set('flexiform:element_info', $elements);
+    }
+  }
+
+  if (!empty($entity_type)) {
+    if (!empty($bundle)) {
+      if (!empty($name)) {
+        return $elements[$entity_type][$bundle][$name];
+      }
+      return $elements[$entity_type][$bundle];
+    }
+    return $elements[$entity_type];
+  }
+
+  return $elements;
+}
+
+//-----------------------------------------------------------------------------
+// Flexiform Display API
+
+/**
+ * Get information about flexiform displays.
+ */
+function flexiform_display_info($display = FALSE) {
+  $displays = &drupal_static(__FUNCTION__, array());
+
+  if (empty($displays)) {
+    if ($cache = cache_get('flexiform:display_info', 'cache')) {
+      $displays = $cache->data;
+    }
+    else {
+      $displays = array();
+      foreach (module_implements('flexiform_display_info') as $module) {
+        // Due to http://drupal.org/node/890660 we can't use module_invoke_all()
+        // because we need to know the provenance of each set.
+        $displays_module = module_invoke($module, 'flexiform_display_info');
+        foreach ($displays_module as $display_name => $display_info) {
+          $display_info += array(
+            'class' => $display_name,
+            'label' => $display_name,
+            'module' => $module,
+            'entity_types' => array(),
+          );
+          $displays[$display_name] = $display_info;
+        }
+      }
+
+      // Alter the data sets with hook_party_data_set_info_alter().
+      drupal_alter('flexiform_display_info', $displays);
+
+      cache_set('flexiform:display_info', $displays);
+    }
+  }
+
+  if (!empty($display)) {
+    return empty($displays[$display]) ? FALSE : $displays[$display];
+  }
+
+  return $displays;
+}
+
+/**
+ * Get display plugins for a particular entity type.
+ */
+function flexiform_entity_type_get_displays($entity_type) {
+  // If this isn't an entity type return false
+  if (!entity_get_info($entity_type)) {
+    return FALSE;
+  }
+
+  $displays = flexiform_display_info();
+  $applicable_displays = array();
+  foreach ($displays as $display => $info) {
+    if (empty($info['entity_types'])
+      || in_array($entity_type, $info['entity_types'])) {
+      $applicable_displays[$display] = $info;
+    }
+  }
+  return $applicable_displays;
+}
+
+/**
+ * Display a flexiform.
+ */
+function flexiform_display($flexiform, $display, $context = array()) {
+  return $flexiform->getDisplay($display)->build($context);
+}

@@ -1,0 +1,189 @@
+<?php
+
+/**
+ * @file
+ * The main file for the module.
+ */
+
+require_once 'splashify.display.inc';
+
+/**
+ * Implements hook_menu().
+ */
+function splashify_menu() {
+  $items = array();
+
+  // If they specify What: Enter Text or What: Text Full Screen, this is the
+  // page that will come up.
+  $items['splashify-splash'] = array(
+    'title' => 'Splash',
+    'page callback' => 'splashify_display_splashtext',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  // Define the admin area.
+  $items['admin/config/system/splashify'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('splashify_admin_when_form'),
+    'title' => 'Splashify',
+    'description' => t('Configuration area for the Splashify system.'),
+    'file' => 'admin/splashify.admin.when.inc',
+    'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('access splashify admin'),
+    'weight' => 6,
+  );
+
+  $items['admin/config/system/splashify/when'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('splashify_admin_when_form'),
+    'title' => 'When',
+    'file' => 'admin/splashify.admin.when.inc',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access arguments' => array('access splashify admin'),
+    'weight' => 6,
+  );
+
+  $items['admin/config/system/splashify/where'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('splashify_admin_where_form'),
+    'title' => 'Where',
+    'file' => 'admin/splashify.admin.where.inc',
+    'type' => MENU_LOCAL_TASK,
+    'access arguments' => array('access splashify admin'),
+    'weight' => 8,
+  );
+
+  $items['admin/config/system/splashify/what'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('splashify_admin_what_form'),
+    'title' => 'What',
+    'file' => 'admin/splashify.admin.what.inc',
+    'type' => MENU_LOCAL_TASK,
+    'access arguments' => array('access splashify admin'),
+    'weight' => 10,
+  );
+
+  $items['admin/config/system/splashify/how'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('splashify_admin_how_form'),
+    'title' => 'How',
+    'file' => 'admin/splashify.admin.how.inc',
+    'type' => MENU_LOCAL_TASK,
+    'access arguments' => array('access splashify admin'),
+    'weight' => 12,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function splashify_permission() {
+  return array(
+    'access splashify admin' => array(
+      'title' => t('Administer Splashify'),
+      'description' => t('Access the admin area for the splashify module.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_libraries_info().
+ */
+function splashify_libraries_info() {
+  $libraries = array();
+
+  // jStorage
+  $libraries['jstorage'] = array(
+    'name' => 'jStorage library',
+    'vendor url' => 'http://www.jstorage.info/',
+    'download url' => 'https://github.com/andris9/jStorage/zipball/master',
+    'version callback' => '_splashify_jstorage_version',
+    'version arguments' => array('1','2'),
+    'versions' => array(
+      '1' => array(),
+      '2' => array(),
+    ),
+    'files' => array(
+      'js' => array(
+        'jstorage.js',
+      ),
+    ),
+    'variants' => array(
+      'minified' => array(
+        'files' => array(
+          'js' => array(
+            'jstorage.min.js',
+          ),
+        ),
+        'variant callback' => '_splashify_test_installed',
+        'variant arguments' => array(),
+      ),
+    ),
+  );
+
+  // Mobile Detect
+  $libraries['Mobile_Detect'] = array(
+    'name' => 'Mobile Detect',
+    'vendor url' => 'http://mobiledetect.net',
+    'download url' => 'https://raw.github.com/serbanghita/Mobile-Detect/master/Mobile_Detect.php',
+    'version callback' => '_splashify_mobiledetect_version',
+    'files' => array(
+      'php' => array('Mobile_Detect.php')
+    ),
+    'versions' => array(
+      '2' => array(),
+    )
+  );
+
+  return $libraries;
+}
+
+/**
+ * Gets the version of jStorage library.
+ */
+function _splashify_jstorage_version($library, $version) {
+  return $version;
+}
+
+/**
+ * Support version 2 of this library.
+ */
+function _splashify_mobiledetect_version($library, $version) {
+  return 2;
+}
+
+/**
+ * Detects whether the variant is installed or not.
+ *
+ * Determines if the JS file exists.
+ */
+function _splashify_test_installed($library, $name, $args) {
+  // Make sure the file exists.
+  $path = DRUPAL_ROOT . '/' . $library['library path'] . '/';
+  $file = file_exists($path . 'jstorage.min.js');
+  if (!$file) {
+    return FALSE;
+  }
+  else {
+    return TRUE;
+  }
+}
+
+/**
+ * Implements hook_help().
+ */
+function splashify_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#splashify':
+      $output = '';
+      $output .= '<h3>' . t('Splashify Help') . '</h3>';
+      $output .= '<h4>' . t('What do we consider a splash page?') . '</h4>';
+      $output .= '<p>' . t("We define a splash page as being content that shows up at a specified interval, at a specified location, one time. If someone goes to a certain page for the first time, we want to make sure the splash content shows up. But if the person is coming from an internal link on the site, we don't want the splash content to show up over and over again (otherwise, the splash page would become a nuisance).") . '</p>';
+      $output .= '<p>' . t('We determine how often the splash page should show up by what is defined under the "When" tab.') . '</p>';
+      return $output;
+  }
+}
+

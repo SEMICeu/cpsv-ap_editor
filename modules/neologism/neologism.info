@@ -1,0 +1,18 @@
+name = Neologism
+description = "Allows users to create and publish RDF Schema vocabularies."
+package = RDF
+core = 7.x
+
+dependencies[] = user_reference
+dependencies[] = node_reference
+dependencies[] = rdfx
+
+files[] = neologism.info 
+files[] = neologism.install
+files[] = neologism.module
+; Information added by drupal.org packaging script on 2013-10-01
+version = "7.x-2.x-dev"
+core = "7.x"
+project = "neologism"
+datestamp = "1380592771"
+

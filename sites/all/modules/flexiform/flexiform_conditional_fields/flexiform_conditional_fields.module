@@ -1,0 +1,203 @@
+<?php
+/**
+ * @file
+ * Main module code for flexiform conditional fields integrations.
+ */
+
+/**
+ * Implements hook_menu()
+ */
+function flexiform_conditional_fields_menu() {
+  $items = array();
+
+  $items['admin/structure/flexiforms/manage/%flexiform/form-fields/%flexiform_formfield/conditional-fields/%flexiform_formfield'] = array(
+    'title' => 'Edit Conditional Field',
+    'page callback' => 'flexiform_conditional_fields_operation',
+    'page arguments' => array(4, 6, 8),
+    'file' => 'flexiform_conditional_fields.admin.inc',
+    'access arguments' => array('administer flexiforms'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_module_implements_alter()
+ */
+function flexiform_conditional_fields_module_implements_alter(&$implementations, $hook) {
+  if ($hook != 'element_info_alter') {
+    return;
+  }
+
+  $group = $implementations['flexiform_conditional_fields'];
+  unset($implementations['flexiform_conditional_fields']);
+  $implementations['flexiform_conditional_fields'] = $group;
+}
+
+/**
+ * Implements hook_flexiform_build_alter().
+ */
+function flexiform_conditional_fields_element_info_alter(&$types) {
+  foreach ($types as $type => $info) {
+    $types[$type]['#after_build'][] = 'flexiform_conditional_fields_element_after_build';
+  }
+}
+
+/**
+ * After build on flexiform form elements.
+ *
+ * Add conditional fields information.
+ */
+function flexiform_conditional_fields_element_after_build($element, &$form_state) {
+  // Ensure that the element is a field.
+  if (isset($element['#field_name'])) {
+    $field = $element;
+  }
+  elseif (isset($element['#language'], $element[$element['#language']], $element[$element['#language']]['#field_name'])) {
+    // Some fields are wrapped in containers before processing.
+    $field = $element[$element['#language']];
+  }
+  // This isn't a field, but we'll allow it through anyway..
+  else {
+    $field = $element;
+  }
+
+  // Only act on flexiforms.
+  $form = &$form_state['complete form'];
+  if (empty($form['#flexiform'])) {
+    return $element;
+  }
+  $flexiform = $form['#flexiform'];
+
+  $dependencies = flexiform_conditional_fields_load_depencies($flexiform);
+  if (!$dependencies) {
+    return $element;
+  }
+
+  // Work out the field_array_parents.
+  $field_array_parents = $field['#array_parents'];
+  $flexiform_element = $field;
+
+  while (count($field_array_parents) && empty($flexiform_element['#flexiform_element'])) {
+    array_pop($field_array_parents);
+    $flexiform_element = drupal_array_get_nested_value($form, $field_array_parents);
+  }
+
+  if (empty($flexiform_element['#flexiform_element'])) {
+    return $element;
+  }
+  $element_namespace = $flexiform_element['#flexiform_element']->getElementNamespace();
+  $field_name = !empty($field['#field_name']) ? $field['#field_name'] : NULL;
+  $field['#field_name'] = $element_namespace;
+
+  // Attach dependent.
+  if (isset($dependencies['dependents'][$element_namespace])) {
+    foreach ($dependencies['dependents'][$element_namespace] as $id => $dependency) {
+      if (!isset($form['#conditional_fields'][$element_namespace]['dependees'][$id])) {
+        if (!empty($field['#field_parents'])) {
+          $field_parents = $field['#field_parents'];
+        }
+        $field['#field_parents'] = $field_array_parents;
+        array_pop($field['#field_parents']);
+        conditional_fields_attach_dependency($form, array('#field_name' => $dependency['dependee']), $field, $dependency['options'], $id);
+        if (!empty($field_parents)) {
+          $field['#field_parents'] = $field_parents;
+        }
+      }
+    }
+  }
+
+  // Attach dependee.
+  // TODO: collect information about every element of the dependee widget, not
+  // just the first encountered. This bottom-up approach would allow us to
+  // define per-element sets of dependency values.
+  if (isset($dependencies['dependees'][$element_namespace])) {
+    foreach ($dependencies['dependees'][$element_namespace] as $id => $dependency) {
+      if (!isset($form['#conditional_fields'][$element_namespace]['dependents'][$id])) {
+        conditional_fields_attach_dependency($form, $field, array('#field_name' => $dependency['dependent']), $dependency['options'], $id);
+      }
+    }
+  }
+
+  if (!empty($field_name)) {
+    $field['#field_name'] = $field_name;
+    unset ($form['#conditional_fields'][$field_name]);
+  }
+
+  return $element;
+}
+
+/**
+ * Get the relevant selector for the flexiform element.
+ */
+function flexiform_conditional_fields_element_selector($element) {
+  $language = $element['#language'];
+  if (empty($element[$language])) {
+    return conditional_fields_field_selector($element);
+  }
+
+  $child = $element[$language];
+  if ($key = reset(element_children($child))) {
+    return conditional_fields_field_selector($child[$key]);
+  }
+
+  return conditional_fields_field_selector($child);
+}
+
+/**
+ * Load flexiform dependencies.
+ *
+ * @param $flexiform.
+ */
+function flexiform_conditional_fields_load_depencies($flexiform) {
+  $dependencies = &drupal_static(__FUNCTION__, array());
+
+  if (isset($dependencies[$flexiform->form])) {
+    return $dependencies[$flexiform->form];
+  }
+
+  $dependencies[$flexiform->form] = array();
+  $id = 0;
+  foreach ($flexiform->elements as $element_namespace => $settings) {
+
+    if (empty($settings['conditional_fields'])) {
+      continue;
+    }
+
+    foreach ($settings['conditional_fields'] as $dependency_key => $options) {
+      list($dependee) = explode('|', $dependency_key);
+
+      $dependencies[$flexiform->form]['dependents'][$element_namespace][$id] = array(
+        'dependee' => $dependee,
+        'options' => $options,
+      );
+
+      $dependencies[$flexiform->form]['dependees'][$dependee][$id] = array(
+        'dependent' => $element_namespace,
+        'options' => $options,
+      );
+
+      $id++;
+    }
+  }
+
+  return $dependencies[$flexiform->form];
+}
+
+/**
+ * Alter the configuration form for flexiform elements.
+ */
+function flexiform_conditional_fields_form_flexiform_field_configure_form_alter(&$form, &$form_state) {
+  form_load_include($form_state, 'inc', 'flexiform_conditional_fields', 'flexiform_conditional_fields.admin');
+
+  $form['conditional_fields'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Conditional Fields'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#tree' => TRUE,
+  );
+
+  $form['conditional_fields'] += flexiform_conditional_fields_flexiform_element_configure_form($form['conditional_fields'], $form_state, $form);
+}

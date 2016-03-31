@@ -1,0 +1,24 @@
+function custom_webform_pre_build_list_webform_select_options_info() {
+    $items = array();
+    $items['user_roles'] = array(
+        'title' => t('Roles'),
+        'options callback' => 'custom_webform_pre_build_list_user_roles'
+    );
+
+   return $items;
+}
+
+/**
+ * Build an options list to be used with webforms select list based in drupal roles
+ */
+function custom_webform_pre_build_list_user_roles() {
+    $roles = user_roles();
+    $contentarray = array();
+    $contentarray[0] = t("Select user role");
+  
+     foreach ($roles as $role) {
+            $contentarray[$role] = t($role);
+      }
+
+    return $contentarray;
+}

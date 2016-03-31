@@ -1,0 +1,1018 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Install file for Neologism module. Registers three bundles : Vocabulary, Class and Property
+ */
+
+/**
+ * Implements hook_install().
+ *
+ * reference for taking 'base' => 'node_content' : http://drupal.org/node/224333
+ */
+function neologism_install() {
+
+  $t = get_t();
+
+  // Define the bundles.
+  $neologism_entities = array(
+    array(
+      'type' => 'property',
+      'name' => $t('Property'),
+      'base' => 'node_content',
+      'description' => $t('Create predicates for your Vocabulary.'),
+      'help' => 'Create predicates for your Vocabulary.',
+      'custom' => 0,
+      'modified' => 1,
+      'locked' => 0,
+      'has_title' => 1,
+      'title_label' => 'Property URI',
+    ),
+    array(
+      'type' => 'class',
+      'name' => $t('Class'),
+      'base' => 'node_content',
+      'description' => $t('Create Classes for your Vocabulary.'),
+      'help' => 'Create Classes for your Vocabulary.',
+      'custom' => 0,
+      'modified' => 1,
+      'locked' => 0,
+      'has_title' => 1,
+      'title_label' => 'Class URI',
+    ),
+    array(
+      'type' => 'vocabulary',
+      'name' => $t('Vocabulary'),
+      'base' => 'node_content',
+      'description' => $t('Create an RDF Vocabulary.'),
+      'help' => 'Create an RDF Vocabulary.',
+      'custom' => 0,
+      'modified' => 1,
+      'locked' => 0,
+      'has_title' => 1,
+      'title_label' => 'Vocabulary ID',
+    ),
+    array(
+      'type' => 'workspace',
+      'name' => $t('Vocabulary Workspace'),
+      'base' => 'node_content',
+      'description' => $t('Create an RDF Vocabulary Workspace consisting of multiple vocabularies and a main vocabulary.'),
+      'help' => 'Create an RDF Vocabulary Workspace consisting of multiple vocabularies and a main vocabulary.',
+      'custom' => 0,
+      'modified' => 1,
+      'locked' => 0,
+      'has_title' => 1,
+      'title_label' => 'Vocabulary Workspace Name',
+    ),
+  );
+
+
+  foreach ($neologism_entities as $node) {
+    // Complete the node type definition by setting any defaults not explicitly
+    // declared above.
+    // http://api.drupal.org/api/function/node_type_set_defaults/7
+    $content_type = node_type_set_defaults($node);
+
+    //  node_add_body_field($content_type, $label = 'Details');
+    // Create a custom field instead
+
+    // Save the content type
+    node_type_save($content_type);
+  }
+
+
+  // Create all the fields we are adding to our content type.
+  // http://api.drupal.org/api/function/field_create_field/7
+  foreach (_neologism_installed_fields() as $field) {
+    // for installation errors during development
+    //field_delete_field($field);
+    field_create_field($field);
+  }
+
+  // Create all the instances for our fields.
+  // http://api.drupal.org/api/function/field_create_instance/7
+  foreach (_neologism_installed_instances() as $instance) {
+    field_create_instance($instance);
+  }
+
+
+  // Set Additional Details for content types
+
+  // promote to front page disabled by default
+  variable_set('node_options_vocabulary', array('status'));
+  // promote to front page disabled by default
+  variable_set('node_options_class', array('status'));
+  // promote to front page disabled by default
+  variable_set('node_options_property', array('status'));
+  // promote to front page disabled by default
+  variable_set('node_options_workspace', array('status'));
+
+  // (0 - comments default open) (1 - comments default closed) (2 - hidden)
+  variable_set('comment_vocabulary', '1');
+  // (0 - comments default open) (1 - comments default closed) (2 - hidden)
+  variable_set('comment_class', '1');
+  // (0 - comments default open) (1 - comments default closed) (2 - hidden)
+  variable_set('comment_property', '1');
+  // (0 - comments default open) (1 - comments default closed) (2 - hidden)
+  variable_set('comment_workspace', '1');
+
+  // preview before submitting optional
+  variable_set('node_preview_vocabulary', 1);
+  // preview before submitting optional
+  variable_set('node_preview_class', 1);
+  // preview before submitting optional
+  variable_set('node_preview_property', 1);
+  // preview before submitting optional
+  variable_set('node_preview_workspace', 1);
+}
+
+/**
+ * Return a structured array defining the fields created by this content type.
+ *
+ * This is packaged in a function so it can be used in both
+ * neologism_install() and neologism_uninstall().
+ */
+function _neologism_installed_fields() {
+  $t = get_t();
+  return array(
+    'property_related_vocabulary' => array(
+      'field_name' => 'property_related_vocabulary',
+      'type' => 'node_reference',
+      'settings' => array(
+        'referenceable_types' => array('vocabulary',
+        ),
+      ),
+      'cardinality' => 1,
+      'default_formatter' => 'node_reference_default',
+    ),
+    'property_label' => array(
+      'field_name' => 'property_label',
+      'cardinality' => 1,
+      'type' => 'text',
+      'settings' => array(
+        'max_length' => 60,
+      ),
+    ),
+    'property_comment' => array(
+      'field_name' => 'property_comment',
+      'cardinality' => 1,
+      'type' => 'text_long',
+    ),
+    'property_details' => array(
+      'field_name' => 'property_details',
+      'type' => 'text_with_summary',
+      'cardinality' => 1,
+    ),
+    'property_functional_property' => array(
+      'field_name' => 'property_functional_property',
+      'type' => 'list_boolean',
+      'settings' => array(
+        'allowed_values' => array(0 => 0, 1 => 'Functional Property'),
+        'allowed_values_function' => '',
+      ),
+      'cardinality' => 1,
+    ),
+    'property_inv_func' => array(
+      'field_name' => 'property_inv_func',
+      'type' => 'list_boolean',
+      'settings' => array(
+        'allowed_values' => array(0 => 0, 1 => 'Inverse Functional Property'),
+        'allowed_values_function' => '',
+      ),
+      'cardinality' => 1,
+    ),
+    'property_domain' => array(
+      'field_name' => 'property_domain',
+      'type' => 'node_reference',
+      'settings' => array(
+        'referenceable_types' => array('class',
+        ),
+      ),
+      'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+      'default_formatter' => 'node_reference_default',
+    ),
+    'property_range' => array(
+      'field_name' => 'property_range',
+      'type' => 'node_reference',
+      'settings' => array(
+        'referenceable_types' => array('class',
+        ),
+      ),
+      'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+      'default_formatter' => 'node_reference_default',
+    ),
+    'property_superproperty' => array(
+      'field_name' => 'property_superproperty',
+      'type' => 'node_reference',
+      'settings' => array(
+        'referenceable_types' => array('property',
+        ),
+      ),
+      'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+      'default_formatter' => 'node_reference_default',
+    ),
+    'property_inverse' => array(
+      'field_name' => 'property_inverse',
+      'type' => 'node_reference',
+      'settings' => array(
+        'referenceable_types' => array('property',
+        ),
+      ),
+      'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+      'default_formatter' => 'node_reference_default',
+    ),
+    'class_related_vocabulary' => array(
+      'field_name' => 'class_related_vocabulary',
+      'type' => 'node_reference',
+      'settings' => array(
+        'referenceable_types' => array('vocabulary',
+        ),
+      ),
+      'cardinality' => 1,
+      'default_formatter' => 'node_reference_default',
+    ),
+    'class_label' => array(
+      'field_name' => 'class_label',
+      'cardinality' => 1,
+      'type' => 'text',
+      'settings' => array(
+        'max_length' => 60,
+      ),
+    ),
+    'class_comment' => array(
+      'field_name' => 'class_comment',
+      'cardinality' => 1,
+      'type' => 'text_long',
+    ),
+    'class_details' => array(
+      'field_name' => 'class_details',
+      'type' => 'text_with_summary',
+      'cardinality' => 1,
+    ),
+    'class_superclass' => array(
+      'field_name' => 'class_superclass',
+      'type' => 'node_reference',
+      'settings' => array(
+        'referenceable_types' => array('class',
+        ),
+      ),
+      'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+      'default_formatter' => 'node_reference_default',
+    ),
+    'class_disjoint_with' => array(
+      'field_name' => 'class_disjoint_with',
+      'type' => 'node_reference',
+      'settings' => array(
+        'referenceable_types' => array('class',
+        ),
+      ),
+      'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+      'default_formatter' => 'node_reference_default',
+    ),
+    'vocabulary_namespace_uri' => array(
+      'field_name' => 'vocabulary_namespace_uri',
+      'cardinality' => 1,
+      'type' => 'list_text',
+      'settings' => array(
+        'allowed_values' => array('0' => t('Default') . ': ' . url('<front>', array('absolute' => TRUE)) . '<span id="neologism-default-ns"><em>' . t('vocabulary-id') . '</em></span>#', '1' => "Custom"),
+        'allowed_values_function' => '',
+      ),
+    ),
+    'vocabulary_title' => array(
+      'field_name' => 'vocabulary_title',
+      'cardinality' => 1,
+      'type' => 'text',
+      'settings' => array(
+        'max_length' => 60,
+      ),
+    ),
+    'vocabulary_abstract' => array(
+      'field_name' => 'vocabulary_abstract',
+      'cardinality' => 1,
+      'type' => 'text_long',
+    ),
+    'vocabulary_body' => array(
+      'field_name' => 'vocabulary_body',
+      'type' => 'text_with_summary',
+      'cardinality' => 1,
+    ),
+    'vocabulary_additional_rdf' => array(
+      'field_name' => 'vocabulary_additional_rdf',
+      'type' => 'text_long',
+      'cardinality' => 1,
+    ),
+    'workspace_main_vocabulary' => array(
+      'field_name' => 'workspace_main_vocabulary',
+      'type' => 'node_reference',
+      'settings' => array(
+        'referenceable_types' => array('vocabulary',
+        ),
+      ),
+      'cardinality' => 1,
+      'default_formatter' => 'node_reference_default',
+    ),
+    'workspace_authors' => array(
+      'field_name' => 'workspace_authors',
+      'type' => 'user_reference',
+      'settings' => array(
+        'referenceable_roles' => array('2' => '2', '3' => '3'),
+        'referenceable_status' => array('1' => '1', '0' => '0'),
+      ),
+      'default_widget' => 'user_reference_autocomplete',
+      'default_formatter' => 'user_reference_default',
+      'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+    ),
+    'workspace_layout' => array(
+      'field_name' => 'workspace_layout',
+      'type' => 'text_long',
+      'cardinality' => 1,
+    ),
+  );
+}
+
+/**
+ * Return a structured array defining the instances for this content type.
+ *
+ * The instance lets Drupal know which widget to use to allow the user to enter
+ * data and how to react in different view modes.
+ *
+ * This is provided as a function so that it can be used in both hook_install()
+ * and hook_uninstall().
+ */
+function _neologism_installed_instances() {
+  $t = get_t();
+  return array(
+    'property_related_vocabulary' => array(
+      'field_name' => 'property_related_vocabulary',
+      'label' => $t('Related Vocabulary'),
+      'bundle' => 'property',
+      'entity_type' => 'node',
+      'required' => TRUE,
+      'description' => 'The vocabulary to which this property is related.',
+      'widget' => array(
+        'weight' => -6,
+        // options_select , node_reference_select
+        'type' => 'node_reference_autocomplete',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'inline',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ),
+    ),
+    'property_label' => array(
+      'field_name' => 'property_label',
+      'label' => $t('Label'),
+      'bundle' => 'property',
+      'entity_type' => 'node',
+      'required' => TRUE,
+      'description' => 'A human-readable name for the property.',
+      'widget' => array(
+        'type' => 'text_textfield',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'inline',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'inline',
+          'type' => 'default',
+        ),
+      ),
+    ),
+    'property_comment' => array(
+      'field_name' => 'property_comment',
+      'label' => $t('Comment'),
+      'bundle' => 'property',
+      'entity_type' => 'node',
+      'description' => 'A plain text description of the property.',
+      'required' => FALSE,
+      'widget' => array(
+        'type' => 'text_textarea',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'above',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'above',
+          'type' => 'default',
+        ),
+      ),
+    ),
+    'property_details' => array(
+      'field_name' => 'property_details',
+      'label' => $t('Details'),
+      'bundle' => 'property',
+      'entity_type' => 'node',
+      'description' => 'Will only show in HTML views.<br /><br /><br />',
+      'required' => FALSE,
+      'widget' => array(
+        'type' => 'text_textarea_with_summary',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'hidden',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'hidden',
+          'type' => 'trimmed',
+        ),
+      ),
+    ),
+    'property_functional_property' => array(
+      'field_name' => 'property_functional_property',
+      'label' => $t('Functional Property ? '),
+      'bundle' => 'property',
+      'entity_type' => 'node',
+      'description' => 'Check this box, if your property is an FP, i.e. when you use this property in a statement, then the subject of the statement uniquely determines its object.',
+      'widget' => array(
+        'type' => 'options_onoff',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'inline',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ),
+    ),
+    'property_inv_func' => array(
+      'field_name' => 'property_inv_func',
+      'label' => $t('Inverse Functional Property ?'),
+      'bundle' => 'property',
+      'entity_type' => 'node',
+      'description' => 'Check this box, if your property is an IFP, i.e. the object of a statment that uses your property uniquely determines its subject.',
+      'widget' => array(
+        'type' => 'options_onoff',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'inline',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ),
+    ),
+    'property_domain' => array(
+      'field_name' => 'property_domain',
+      'label' => $t(' Domain'),
+      'bundle' => 'property',
+      'entity_type' => 'node',
+      'description' => 'If having this property makes something belong to a certain class, then the class should be selected here.',
+      'widget' => array(
+        // options_select , node_reference_select
+        'type' => 'node_reference_autocomplete',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'above',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ),
+    ),
+    'property_range' => array(
+      'field_name' => 'property_range',
+      'label' => $t(' Range'),
+      'bundle' => 'property',
+      'entity_type' => 'node',
+      'description' => 'If all possible values of this property are members of a certain class, then the class should be selected here.',
+      'widget' => array(
+        // options_select , node_reference_select
+        'type' => 'node_reference_autocomplete',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'above',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ),
+    ),
+    'property_superproperty' => array(
+      'field_name' => 'property_superproperty',
+      'label' => $t(' Superproperty'),
+      'bundle' => 'property',
+      'entity_type' => 'node',
+      'description' => '',
+      'widget' => array(
+        // options_select , node_reference_select
+        'type' => 'node_reference_autocomplete',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'above',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ),
+    ),
+    'property_inverse' => array(
+      'field_name' => 'property_inverse',
+      'label' => $t(' Inverse'),
+      'bundle' => 'property',
+      'entity_type' => 'node',
+      'description' => '',
+      'widget' => array(
+        // options_select , node_reference_select
+        'type' => 'node_reference_autocomplete',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'above',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ),
+    ),
+    'class_related_vocabulary' => array(
+      'field_name' => 'class_related_vocabulary',
+      'label' => $t('Related Vocabulary'),
+      'bundle' => 'class',
+      'entity_type' => 'node',
+      'required' => TRUE,
+      'description' => 'The vocabulary to which this class is related.',
+      'widget' => array(
+        'weight' => -6,
+        // options_select , node_reference_select
+        'type' => 'node_reference_autocomplete',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'inline',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ),
+    ),
+    'class_label' => array(
+      'field_name' => 'class_label',
+      'label' => $t('Label'),
+      'bundle' => 'class',
+      'entity_type' => 'node',
+      'required' => TRUE,
+      'description' => 'A human-readable name for the class.',
+      'widget' => array(
+        'type' => 'text_textfield',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'inline',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'inline',
+          'type' => 'default',
+        ),
+      ),
+    ),
+    'class_comment' => array(
+      'field_name' => 'class_comment',
+      'label' => $t('Comment'),
+      'bundle' => 'class',
+      'entity_type' => 'node',
+      'description' => 'A plain text description of the class.',
+      'required' => FALSE,
+      'widget' => array(
+        'type' => 'text_textarea',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'above',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'above',
+          'type' => 'trimmed',
+        ),
+      ),
+    ),
+    'class_superclass' => array(
+      'field_name' => 'class_superclass',
+      'label' => $t(' Superclass'),
+      'bundle' => 'class',
+      'entity_type' => 'node',
+      'description' => 'If every member of this class is also a member of another class, then that other class should be selected here.',
+      'widget' => array(
+        // options_select , node_reference_select
+        'type' => 'node_reference_autocomplete',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'above',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ),
+    ),
+    'class_disjoint_with' => array(
+      'field_name' => 'class_disjoint_with',
+      'label' => $t(' Disjoint with'),
+      'bundle' => 'class',
+      'entity_type' => 'node',
+      'description' => 'If members of this class cannot logically also be members of another class, then that other class should be selected here.',
+      'widget' => array(
+        // options_select , node_reference_select
+        'type' => 'node_reference_autocomplete',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'above',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ),
+    ),
+    'class_details' => array(
+      'field_name' => 'class_details',
+      'label' => $t('Details'),
+      'bundle' => 'class',
+      'entity_type' => 'node',
+      'description' => 'Will only show in HTML views.<br /><br /><br />',
+      'required' => FALSE,
+      'widget' => array(
+        'type' => 'text_textarea_with_summary',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'above',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ),
+    ),
+    'vocabulary_title' => array(
+      'field_name' => 'vocabulary_title',
+      'label' => $t('Title'),
+      'bundle' => 'vocabulary',
+      'entity_type' => 'node',
+      'description' => 'A human-readable title for the vocabulary.',
+      'required' => TRUE,
+      'widget' => array(
+        'type' => 'text_textfield',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'inline',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'hidden',
+          'type' => 'default',
+        ),
+      ),
+    ),
+    'vocabulary_namespace_uri' => array(
+      'field_name' => 'vocabulary_namespace_uri',
+      'label' => $t('Namespace URI'),
+      'bundle' => 'vocabulary',
+      'entity_type' => 'node',
+      'description' => 'URIs of classes and properties in the vocabulary will start with this.',
+      'required' => TRUE,
+      'default_value' => array(array('value' => '0')),
+      'widget' => array(
+        'type' => 'options_buttons',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'inline',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'inline',
+          'type' => 'default',
+        ),
+      ),
+    ),
+    'vocabulary_abstract' => array(
+      'field_name' => 'vocabulary_abstract',
+      'label' => $t('Abstract'),
+      'bundle' => 'vocabulary',
+      'entity_type' => 'node',
+      'description' => '',
+      'required' => FALSE,
+      'widget' => array(
+        'type' => 'text_textarea',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'above',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'above',
+          'type' => 'default',
+        ),
+      ),
+    ),
+    'vocabulary_body' => array(
+      'field_name' => 'vocabulary_body',
+      'label' => $t('Body'),
+      'bundle' => 'vocabulary',
+      'entity_type' => 'node',
+      'description' => '',
+      'required' => FALSE,
+      'widget' => array(
+        'type' => 'text_textarea_with_summary',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'hidden',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ),
+    ),
+    'vocabulary_additional_rdf' => array(
+      'field_name' => 'vocabulary_additional_rdf',
+      'label' => $t('Additional Custom RDF'),
+      'bundle' => 'vocabulary',
+      'entity_type' => 'node',
+      'description' => $t('Additional RDF in Turtle syntax for inclusion in the vocabulary\'s RDF description.'),
+      'required' => FALSE,
+      'widget' => array(
+        'type' => 'text_textarea',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'above',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ),
+    ),
+    'workspace_main_vocabulary' => array(
+      'field_name' => 'workspace_main_vocabulary',
+      'label' => $t(' Main Vocabulary'),
+      'bundle' => 'workspace',
+      'entity_type' => 'node',
+      'description' => 'The main vocabulary of the workspace.',
+      'widget' => array(
+        // options_select , node_reference_select
+        'type' => 'node_reference_autocomplete',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'above',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'above',
+          'type' => 'default',
+        ),
+      ),
+    ),
+    'workspace_authors' => array(
+      'field_name' => 'workspace_authors',
+      'label' => $t(' Authors'),
+      'bundle' => 'workspace',
+      'entity_type' => 'node',
+      'description' => 'Users working in the workspace.',
+      'required' => 0,
+      'widget' => array(
+        'weight' => -2,
+        'type' => 'user_reference_autocomplete',
+        'module' => 'user_reference',
+        'active' => 1,
+        'settings' => array(
+          'autocomplete_match' => 'starts_with',
+        ),
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'above',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'inline',
+          'type' => 'default',
+        ),
+      ),
+    ),
+    'workspace_layout' => array(
+      'field_name' => 'workspace_layout',
+      'label' => $t('Workspace Layout'),
+      'bundle' => 'workspace',
+      'entity_type' => 'node',
+      'description' => $t('The XML layout information stored by the diagram widget.'),
+      'required' => FALSE,
+      'widget' => array(
+        'type' => 'text_textarea',
+      ),
+      'display' => array(
+        'default' =>
+        array(
+          'label' => 'above',
+          'format' => 'default',
+        ),
+        'teaser' =>
+        array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_uninstall().
+ *
+ */
+function neologism_uninstall() {
+
+  // Gather all the vocabulary content that might have been created while this
+  // module was enabled.
+  // http://api.drupal.org/api/function/db_query/7
+  $sql    = 'SELECT nid FROM {node} n WHERE n.type = :type';
+  $result = db_query($sql, array(':type' => 'vocabulary'));
+  $nids   = array();
+  foreach ($result as $row) {
+    $nids[] = $row->nid;
+  }
+  // Delete all the nodes at once
+  // http://api.drupal.org/api/function/node_delete_multiple/7
+  node_delete_multiple($nids);
+
+
+  // Deleting all class content
+  $sql    = 'SELECT nid FROM {node} n WHERE n.type = :type';
+  $result = db_query($sql, array(':type' => 'class'));
+  $nids   = array();
+  foreach ($result as $row) {
+    $nids[] = $row->nid;
+  }
+  node_delete_multiple($nids);
+
+
+  // Deleting all property content
+  $sql    = 'SELECT nid FROM {node} n WHERE n.type = :type';
+  $result = db_query($sql, array(':type' => 'property'));
+  $nids   = array();
+  foreach ($result as $row) {
+    $nids[] = $row->nid;
+  }
+  node_delete_multiple($nids);
+
+
+  // Deleting all workspace content
+  $sql    = 'SELECT nid FROM {node} n WHERE n.type = :type';
+  $result = db_query($sql, array(':type' => 'workspace'));
+  $nids   = array();
+  foreach ($result as $row) {
+    $nids[] = $row->nid;
+  }
+  node_delete_multiple($nids);
+
+
+  // Loop over each of the fields defined by this module and delete
+  // all instances of the field, their data, and the field itself.
+  // http://api.drupal.org/api/function/field_delete_field/7
+  foreach (array_keys(_neologism_installed_fields()) as $field) {
+    field_delete_field($field);
+  }
+
+
+  // Loop over any remaining field instances attached to the content types
+  // content type (such as the body field) and delete them individually.
+  // http://api.drupal.org/api/function/field_delete_field/7
+  //  Comment module shows a warning here in some cases
+  $instances = field_info_instances('node', 'property');
+  foreach ($instances as $instance_name => $instance) {
+    field_delete_instance($instance);
+  }
+  $instances = field_info_instances('node', 'class');
+  foreach ($instances as $instance_name => $instance) {
+    field_delete_instance($instance);
+  }
+  $instances = field_info_instances('node', 'vocabulary');
+  foreach ($instances as $instance_name => $instance) {
+    field_delete_instance($instance);
+  }
+  $instances = field_info_instances('node', 'workspace');
+  foreach ($instances as $instance_name => $instance) {
+    field_delete_instance($instance);
+  }
+
+
+  // Delete our content types
+  // http://api.drupal.org/api/function/node_type_delete/7
+  node_type_delete('property');
+  node_type_delete('class');
+  node_type_delete('vocabulary');
+  node_type_delete('workspace');
+
+
+  // Purge all field infromation
+  // http://api.drupal.org/api/function/field_purge_batch/7
+  field_purge_batch(1000);
+
+  // Delete menu entries for workspace
+  db_delete('menu_links')->condition('link_path', 'node/add/workspace')->execute();
+  db_delete('menu_router')->condition('path', 'node/add/workspace')->execute();
+
+  // Delete menu entries for vocabulary
+  db_delete('menu_links')->condition('link_path', 'node/add/vocabulary')->execute();
+  db_delete('menu_router')->condition('path', 'node/add/vocabulary')->execute();
+
+  // Delete menu entries for class
+  db_delete('menu_links')->condition('link_path', 'node/add/class')->execute();
+  db_delete('menu_router')->condition('path', 'node/add/class')->execute();
+
+  // Delete menu entries for property
+  db_delete('menu_links')->condition('link_path', 'node/add/property')->execute();
+  db_delete('menu_router')->condition('path', 'node/add/property')->execute();
+}
+

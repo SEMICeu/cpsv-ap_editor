@@ -1,0 +1,12 @@
+name = Popup On Load Statistics
+description = Enable click/views statistics for popup on page load.
+core = 7.x
+package = Popup On Load
+dependencies[] = popup_onload
+
+; Information added by Drupal.org packaging script on 2014-10-12
+version = "7.x-1.2"
+core = "7.x"
+project = "popup_onload"
+datestamp = "1413119030"
+

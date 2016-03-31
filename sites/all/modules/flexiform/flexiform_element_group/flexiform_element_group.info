@@ -1,0 +1,13 @@
+name = Flexiform Element Groups
+description = Allow grouping of flexiform elements
+core = 7.x
+
+dependencies[] = flexiform
+dependencies[] = field_group
+
+; Information added by Drupal.org packaging script on 2015-01-14
+version = "7.x-1.0-rc3"
+core = "7.x"
+project = "flexiform"
+datestamp = "1421229781"
+

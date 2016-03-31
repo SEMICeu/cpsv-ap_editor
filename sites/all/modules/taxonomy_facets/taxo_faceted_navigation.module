@@ -1,0 +1,1015 @@
+<?php
+/**
+ * @file
+ * Taxo Faceted Navigation module code.
+ *
+ * Provides block for progressively filtering content. There is no limit on
+ * number of blocks it can provide.
+ */
+
+/**
+ * ******************* Hooks section **********************************
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function taxo_faceted_navigation_menu() {
+
+  $items = array();
+
+  // First argumet in the listing url, as specified in the admin form.
+  $first_arg = variable_get('taxo_faceted_navigation_first_argument', 'items_list');
+
+  // The node listing page, where filters can be allied.
+  $items[$first_arg] = array(
+    'page arguments' => array(1),
+    'page callback' => 'taxo_faceted_navigation_print_landing_page',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('view taxo facets'),
+  );
+
+  // Admin settings page.
+  $items['admin/config/search/tax_faceted_nav'] = array(
+    'title' => 'Taxo Faceted Navigation',
+    'description' => 'Taxo Faceted Navigation module configuration',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('taxo_faceted_navigation_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'taxo_faceted_navigation.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  // Add taxo faceted block page.
+  $items['admin/structure/block/add-taxofacet-block'] = array(
+    'title' => 'Add taxofacet block',
+    'description' => 'Add a new taxo faceted block.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('taxo_faceted_navigation_add_block_form'),
+    'access arguments' => array('administer blocks'),
+    'type' => MENU_LOCAL_ACTION,
+    'file' => 'taxo_faceted_navigation.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Menu callback: display the taxo faceted block addition form.
+ *
+ * @see taxo_faceted_navigation_add_block_form_submit()
+ */
+function taxo_faceted_navigation_add_block_form($form, &$form_state) {
+  module_load_include('inc', 'block', 'block.admin');
+  $form = block_admin_configure($form, $form_state, 'taxo_faceted_navigation', NULL);
+
+  // Other modules should be able to use hook_form_block_add_block_form_alter()
+  // to modify this form, so add a base form ID.
+  $form_state['build_info']['base_form_id'] = 'block_add_block_form';
+
+  // Prevent block_add_block_form_validate/submit() from being automatically
+  // added because of the base form ID by providing these handlers manually.
+  $form['#validate'] = array();
+  $form['#submit'] = array('taxo_faceted_navigation_add_block_form_submit');
+
+  return $form;
+}
+
+/**
+ * Implements hook_block_configure().
+ */
+function taxo_faceted_navigation_block_configure($delta = '') {
+  $vid = variable_get("taxo_faceted_navigation_{$delta}_tid", 1);
+  $form_state['vid'] = $vid;
+  return taxo_faceted_navigation_configure_form(array(), $form_state);
+}
+
+/**
+ * Returns the configuration form.
+ *
+ * @param array $form_state
+ *   array An associated array of configuration options should be present in the
+ *   'values' key. If none are given, default configuration is assumed.
+ *
+ * @return array
+ *   The form in Form API format.
+ */
+function taxo_faceted_navigation_configure_form($form, &$form_state) {
+  $taxonomies = taxonomy_get_vocabularies();
+  $vocabs = array();
+  foreach ($taxonomies as $taxonomy) {
+    $vocabs[$taxonomy->vid] = $taxonomy->name;
+  }
+
+  $form['vid'] = array(
+    '#type' => 'select',
+    '#title' => t('Taxonomy'),
+    '#options' => $vocabs,
+    '#default_value' => $form_state['vid'],
+    '#description' => t('Select Vocabulary.'),
+  );
+  return $form;
+}
+
+
+/**
+ * Save the new taxo faceted block.
+ */
+function taxo_faceted_navigation_add_block_form_submit($form, &$form_state) {
+  // Determine the delta of the new block.
+  $block_ids = variable_get('taxo_faceted_block_ids', array());
+  $delta = empty($block_ids) ? 1 : max($block_ids) + 1;
+  $form_state['values']['delta'] = $delta;
+
+  // Add new delta to array of exsisting deltas.
+  $block_ids[] = $delta;
+  // Save the new array of blocks IDs.
+  variable_set('taxo_faceted_block_ids', $block_ids);
+
+  // Save the block configuration.
+  taxo_faceted_navigation_block_save($delta, $form_state['values']);
+
+  // Run the normal new block submission
+  // (borrowed from block_add_block_form_submit).
+  $query = db_insert('block')->fields(array(
+                                        'visibility',
+                                        'pages',
+                                        'custom',
+                                        'title',
+                                        'module',
+                                        'theme',
+                                        'region',
+                                        'status',
+                                        'weight',
+                                        'delta',
+                                        'cache'));
+  foreach (list_themes() as $key => $theme) {
+    if ($theme->status) {
+      $region = !empty($form_state['values']['regions'][$theme->name]) ? $form_state['values']['regions'][$theme->name] : BLOCK_REGION_NONE;
+      $query->values(array(
+        'visibility' => (int) $form_state['values']['visibility'],
+        'pages' => trim($form_state['values']['pages']),
+        'custom' => (int) $form_state['values']['custom'],
+        'title' => $form_state['values']['title'],
+        'module' => $form_state['values']['module'],
+        'theme' => $theme->name,
+        'region' => ($region == BLOCK_REGION_NONE ? '' : $region),
+        'status' => 0,
+        'status' => (int) ($region != BLOCK_REGION_NONE),
+        'weight' => 0,
+        'delta' => $delta,
+        'cache' => DRUPAL_CACHE_PER_PAGE,
+      ));
+    }
+  }
+  $query->execute();
+
+  $query = db_insert('block_role')->fields(array('rid', 'module', 'delta'));
+  foreach (array_filter($form_state['values']['roles']) as $rid) {
+    $query->values(array(
+      'rid' => $rid,
+      'module' => $form_state['values']['module'],
+      'delta' => $delta,
+    ));
+  }
+  $query->execute();
+
+  drupal_set_message(t('The taxofaceted block has been created.'));
+  cache_clear_all();
+  $form_state['redirect'] = 'admin/structure/block';
+}
+
+/**
+ * Implements hook_block_save().
+ */
+function taxo_faceted_navigation_block_save($delta = '', $edit = array()) {
+  variable_set("taxo_faceted_navigation_{$delta}_tid", $edit['vid']);
+}
+
+
+/**
+ * Implements hook_block_info().
+ */
+function taxo_faceted_navigation_block_info() {
+  $blocks = array();
+  $deltas = variable_get('taxo_faceted_block_ids', array());
+  foreach (array_keys(module_invoke_all('taxo_faceted_navigation_blocks')) as $delta) {
+    $deltas[] = $delta;
+  }
+  foreach ($deltas as $delta) {
+    $vid = variable_get("taxo_faceted_navigation_{$delta}_tid", 1);
+    $taxonomy_name = check_plain(taxonomy_vocabulary_load($vid)->name);
+    $blocks[$delta]['info'] = t('Taxo Faceted Filter: ') . t($taxonomy_name);
+    // Menu blocks can't be cached because each menu item can have
+    // a custom access callback. menu.inc manages its own caching.
+    $blocks[$delta]['cache'] = DRUPAL_CACHE_PER_PAGE;
+  }
+  return $blocks;
+}
+
+/**
+ * Generate blocks with menu items used for filtering.
+ *
+ * When user adds particular taxonomy as "taxo filter" to block
+ * this function prints out menu for chosen taxonomy.
+ *
+ * @param integer $delta
+ *   Delta (identifier) of the filter.
+ *
+ * @return array
+ *   Block title and content.
+ */
+function taxo_faceted_navigation_block_view($delta = '') {
+  $vid = variable_get("taxo_faceted_navigation_{$delta}_tid", 2);
+  $block['subject'] = check_plain(taxonomy_vocabulary_load($vid)->name);
+  $block['content'] = taxo_faceted_navigation_get_menu_tree($vid);
+  return $block;
+}
+
+/**
+ * Hook_theme, provides 3 theme files for theming filters
+ */
+function taxo_faceted_navigation_theme() {
+  $template_path = drupal_get_path('module', 'taxo_faceted_navigation') . '/templates';
+  return array(
+    'taxo_faceted_navigation_menu_template' => array(
+      'variables' => array('taxo_menu_item' => NULL),
+      'template' => 'taxo_faceted_navigation_menu-template',
+      'path' => $template_path,
+    ),
+    'taxo_faceted_navigation_ul_wrapper_template' => array(
+      'variables' => array('ul_sub_menu' => NULL),
+      'template' => 'taxo_faceted_navigation_ul_wrapper-template',
+      'path' => $template_path,
+    ),
+    'taxo_faceted_navigation_removefilter_template' => array(
+      'variables' => array('ul_sub_menu' => NULL),
+      'template' => 'taxo_faceted_navigation_removefilter-template',
+      'path' => $template_path,
+    ),
+  );
+}
+
+/**
+ * ******************* END of hooks section ***********************************
+ */
+
+/**
+ * Get all selected filters from the url.
+ *
+ * Get the current url, taxonomy terms that are currently applied as
+ * filter are in the url, this function examines the url and gets
+ * all of the filters applied for the current page.
+ *
+ * @return array
+ *   Array of filter arrays, each filter array has all the info about a filter:
+ *   tid, path alias, term name, vid
+ */
+function taxo_faceted_navigation_get_selected_filters() {
+  $url = drupal_encode_path($_GET['q']);
+  $terms = explode('/', $url);
+  // Chop off first term as it is just word used for page callback
+  // and its not an actual term.
+  $first_url_argument = array_shift($terms);
+  $first_argument = variable_get('taxo_faceted_navigation_first_argument', 'items_list');
+  $filters = array();
+  if ($first_url_argument == $first_argument) {
+    $filters = _taxo_faceted_navigation_get_selected_filters($terms);
+  }
+  else {
+    $url_arr = $_GET;
+    if (array_key_exists('categories', $url_arr)) {
+      $url = drupal_encode_path(check_url($_GET['categories']));
+      if ($url) {
+        $terms = explode('/', $url);
+        $filters = _taxo_faceted_navigation_get_selected_filters($terms);
+      }
+    }
+    else {
+      $filters = NULL;
+    }
+  }
+
+  return $filters;
+}
+
+/**
+ * Utility function to get filters.
+ *
+ * @param array $terms
+ *   Array of terms
+ *
+ * @return array
+ *   Array of filter arrays, each filter array has all the info about a filter:
+ *   tid, path alias, term name, vid.
+ */
+function _taxo_faceted_navigation_get_selected_filters($terms) {
+  $filters = array();
+  foreach ($terms as $term) {
+    $tid = taxo_faceted_navigation_get_term_id_from_url_alias($term);
+    $filter = array();
+    if ($tid) {
+      // If url alias was not a recognised taxonomy term then
+      // taxo_faceted_navigation_get_term_id_from_url_alias($term)
+      // function above returned NULL, so we just ignore that alias,
+      // will be useful if alias is node alias.
+      $filter['tid'] = $tid;
+      $filter['term_path_alias'] = $term;
+      $name = taxo_faceted_navigation_get_term_name_from_id($tid);
+      $filter['term_name'] = $name['name'];
+      $filter['vid'] = $name['vid'];
+      // Will use below for ordering of filter, its just array of
+      // vids indicating which vocabularies are actually selected.
+      $filters_vids[] = $name['vid'];
+      $filters[] = $filter;
+    }
+  }
+  return $filters;
+}
+
+/**
+ * Utility function to extract filter from array of filters.
+ *
+ * For given vid, return filter element with vid equal to given vid.
+ *
+ * @param integer $vid
+ *   Vocabular id
+ *
+ * @param array $filters
+ *   Array of filters.
+ *
+ * @return array
+ *   Array of info about particular filter.
+ */
+function taxo_faceted_navigation_get_array_element($vid, $filters) {
+  foreach ($filters as $fil) {
+    if ($fil['vid'] == $vid) {
+      return $fil;
+    }
+  }
+  return NULL;
+}
+
+/**
+ * Print out menu tree for each vocab selected to be taxo faceted filter.
+ *
+ *  For each vocabulary id that is passed as an argument output menu tree. Array
+ *  of menu tree is passed through the theme function at the end, so themed
+ *  output is produced.
+ *
+ * @param integer $vid
+ *   Vocabulary id
+ *
+ * @return string
+ *   Themed menu tree.
+ */
+function taxo_faceted_navigation_get_menu_tree($vid) {
+  // Get user preferences.
+  $do_not_display_if_empty = variable_get('taxo_faceted_navigation_display_link_if_empty', FALSE);
+  $do_not_display_if_intersection_empty = variable_get('taxo_faceted_navigation_display_link_if_intersection_empty', FALSE);
+  // Get tid for all applied filters from url.
+  $terms = taxo_faceted_navigation_get_selected_filters();
+  $tid_selected = '';
+
+  if ($terms) {
+    foreach ($terms as $term) {
+      if ($term['vid'] == $vid) {
+        // If term is from this vocabulary, it means it is currently
+        // selected term for this vocabulary.
+        $tid_selected = $term['tid'];
+      }
+    }
+  }
+  // Taxonomy tree, get only first level.
+  $tree = taxonomy_get_tree($vid, 0, 1, FALSE);
+  $menu = _taxo_faceted_navigation_get_menu_tree($vid, $tree, $terms, $do_not_display_if_empty, $do_not_display_if_intersection_empty, $tid_selected, TRUE);
+  return theme('taxo_faceted_navigation_ul_wrapper_template', array('ul_sub_menu' => $menu));
+}
+
+/**
+ * Helper function for taxo_faceted_navigation_get_menu_tree.
+ *
+ * Helper function that returns menu tree, it is called recursively.
+ * There is no limit on the number of menu items or the depth of the tree.
+ *
+ * @param integer $vid
+ *   Vocabulary id
+ *
+ * @param array $tree
+ *   Taxonomy tree, but only one level, either first level if called for the
+ *   first time, or first level children of the current level.
+ *
+ * @param array $terms
+ *   Selected filters.
+ *
+ * @param integer $do_not_display_if_empty
+ *   User preferences
+ *
+ * @param integer $do_not_display_if_intersection_empty
+ *   User preferences
+ *
+ * @param integer $tid_selected
+ *   Selected term in the menu
+ *
+ * @param bolen $first_level
+ *   (optional) Defaults to True.
+ *
+ * @return string
+ *   Themed menu item.
+ */
+function _taxo_faceted_navigation_get_menu_tree($vid, $tree, $terms, $do_not_display_if_empty, $do_not_display_if_intersection_empty, $tid_selected, $first_level = TRUE) {
+  $term_name = taxo_faceted_navigation_get_term_name_from_id($tid_selected);
+  $menu = '';
+
+  if ($first_level && $tid_selected) {
+    $menu = '';
+    $menu_record = array();
+    $menu_record['tid'] = '';
+
+    $menu_record['term name'] = $term_name['name'];
+    $menu_record['url alias'] = taxo_faceted_navigation_build_url_alias($vid, $terms, NULL);
+    $menu_record['menu item class'] = 'first leaf';
+    $menu_record['active'] = '';
+    $menu .= theme('taxo_faceted_navigation_removefilter_template', array('taxo_menu_item' => $menu_record));
+  }
+  // We need this so we know when we hit the last item.
+  $number_of_items = count($tree);
+  $item_number = 1;
+
+  // Loop through current level of terms and format as links.
+  foreach ($tree as $term) {
+    // Check if the current term in this loop has any children.
+    $children = array();
+    $children = taxonomy_get_children($term->tid, $vid);
+
+    // Work out if we will display this item or not.
+    $display_item = TRUE;
+    // User preference is to NOT display link if empty, i.e no nodes underneath.
+    if ($do_not_display_if_empty) {
+      $has_nodes = taxo_faceted_navigation_get_subnodes($vid, $term->tid);
+      if (!$has_nodes) {
+        $display_item = FALSE;
+      }
+    }
+    // Now check for other box values.
+    // User preference is to NOT display link if selection of filters have
+    // no nodes underneath.
+    if ($do_not_display_if_intersection_empty) {
+      // Check if this item has filter already applied, if yes we display item
+      // anyhow.
+      $filter_applied = FALSE;
+
+      if ($tid_selected == $term->tid) {
+        $filter_applied = TRUE;
+      }
+      // Do this check only if item is last leaf
+      // and if no filter applied.
+      if ($terms && empty($children) && (!$filter_applied)) {
+        // Remove filter from this vocabulary, if any.
+        $new_terms_arr = array();
+        foreach ($terms as $t) {
+          if ($vid != $t['vid']) {
+            $new_terms_arr[] = $t;
+          }
+        }
+        // Add current item to filters.
+        $curr_term['tid'] = $term->tid;
+        $curr_term['term_path_alias'] = '';
+        $curr_term['term_name'] = '';
+        $curr_term['vid'] = '';
+        $new_terms_arr[] = $curr_term;
+        $nodes = taxo_faceted_navigation_get_nodes_based_on_intersect_of_terms($new_terms_arr);
+        if (empty($nodes)) {
+          $display_item = FALSE;
+        }
+      }
+    }
+
+    if ($display_item) {
+      $menu_record = array();
+      $menu_record['tid'] = $term->tid;
+      $menu_record['term name']  = check_plain($term->name);
+      $menu_record['url alias'] = taxo_faceted_navigation_build_url_alias($vid, $terms, $term->tid);
+      $curent_term_in_children = FALSE;
+      // If it has a filter applied then check that one of the children or
+      // any sub children is filter current selected term
+      // also set menu class as expandable as there are children and menu can
+      // be expanded.
+      if (!empty($children)) {
+        // Get all children and subchildren.
+        $all_children = taxonomy_get_tree($vid, $term->tid);
+        foreach ($all_children as $child) {
+          if ($tid_selected == $child->tid) {
+            $curent_term_in_children = TRUE;
+          }
+        }
+      }
+      // Sort out menu item class for menu item in this loop.
+      $menu_record['menu item class'] = '';
+
+      // If first element in current level.
+      if ($item_number == 1) {
+        $menu_record['menu item class']  = 'first ';
+      }
+      // If last.
+      else {
+        if ($item_number == $number_of_items) {
+          $menu_record['menu item class']  = 'last ';
+        }
+      }
+
+      $menu_record['active'] = '';
+
+      // This is selected menu item.
+      if ($term->tid == $tid_selected) {
+        $menu_record['active'] = 'class="active"';
+        if (empty($children)) {
+          $menu_record['menu item class'] .= 'leaf';
+        }
+        else {
+          $menu_record['menu item class'] .= 'expanded';
+        }
+      }
+      // Non selected menu item.
+      else {
+        if (empty($children)) {
+          $menu_record['menu item class'] .= 'leaf';
+        }
+        else {
+          $menu_record['menu item class'] .= 'collapsed';
+        }
+      }
+
+      // Add menu items from this level to menu string.
+      $menu .= theme('taxo_faceted_navigation_menu_template', array('taxo_menu_item' => $menu_record));
+      // Print sub menu if current term is one of the children of tid in loop,
+      // or if tid in loop is actually the selected one.
+      if ($curent_term_in_children || ($tid_selected == $term->tid)) {
+        $menu .= _taxo_faceted_navigation_get_menu_tree($vid, $children, $terms, $do_not_display_if_empty, $do_not_display_if_intersection_empty, $tid_selected, FALSE);
+      }
+
+      $item_number++;
+    }
+  }
+  return  theme('taxo_faceted_navigation_ul_wrapper_template', array('ul_sub_menu' => $menu));
+}
+
+/**
+ * Build a URL to be used in the menu item.
+ *
+ * Use the taxonomy term of the menu item that we are building, plus all other
+ * terms in the page url to construct the url of the menu item.
+ *
+ * @param integer $vid
+ *   Vocabulary id.
+ *
+ * @param array $terms
+ *   Terms in the url, i.e applied filters
+ *
+ * @param integer $tid
+ *   Term id of the term, the term of the menu item that we are building.
+ *
+ * @return string
+ *   Menu item url.
+ */
+function taxo_faceted_navigation_build_url_alias($vid, $terms, $tid) {
+
+  // Prepend language prefix to the path.
+  global $language;
+  if($language->prefix != NULL){
+    $alias = '/' . $language->prefix;
+  }
+  else {
+    $alias = '';
+  }
+
+  // Get the first argument form settings.
+  $alias .= '/' . variable_get('taxo_faceted_navigation_first_argument', 'items_list');
+
+  $filters_vids = array();
+
+  // If no other terms applied as filters yet, i.e no filters selected
+  // then just build url based on the term we are building menu item for.
+  if ($terms == NULL) {
+    $alias .= '/' . taxo_faceted_navigation_get_term_url_alias_from_tid($tid);
+  }
+  else {
+    // There are other terms, so we need to append other filter terms to the
+    // current menu item, but always preserving the order of vocabularies,
+    // so that we do not end up with multiple urls for the same page.
+    // So replace current vocabulary filter item with the url
+    // of the current menu item we are printing.
+    $count = 0;
+    $arr_element = 999999;
+    foreach ($terms as $term) {
+      // If filter is from current vocab do not append it,
+      // as we are using menu item in loop to build urls alias for this vocab bit.
+      if ($term['vid'] == $vid) {
+        // Get index of array element.
+        $arr_element = $count;
+      }
+      $count++;
+      $filters_vids[] = $term['vid'];
+    }
+    // Found, so replace.
+    if ($arr_element != 999999) {
+      $terms[$arr_element]['term_path_alias'] = taxo_faceted_navigation_get_term_url_alias_from_tid($tid);
+    }
+    else {
+      // There was no term in current filters that was part of this vocabulary
+      // (vocabulary we are building tree for)
+      // so create term for it as we will need it to build menu item, it
+      // will be the term of the menu item we are building.
+      $term['tid'] = $tid;
+      $term['term_path_alias'] = taxo_faceted_navigation_get_term_url_alias_from_tid($tid);
+      $term['term_name'] = 'x';
+      $term['vid'] = $vid;
+      $terms[] = $term;
+      $filters_vids[] = $vid;
+    }
+
+    // If more than one filter order them.
+
+    if (count($terms) > 1) {
+      // Get order of filters from user preferences,
+      // this is a variable that stores vocabularies to be used for
+      // taxo faceted navigation, and its ordered.
+      $taxos = variable_get('taxo_faceted_navigation_taxonomies', $terms);
+      // Will hold ordered filters.
+      $ret_filters = array();
+      foreach ($taxos as $taxo) {
+        // If this vocab in loop is also in the filter array($terms) , add
+        // it to new array of filters,
+        // that way filters in this new array will be ordered the same as in
+        // user preference array ($taxos).
+        if (in_array($taxo['vid'], $filters_vids)) {
+          $ret_filters[] = taxo_faceted_navigation_get_array_element($taxo['vid'], $terms);
+        }
+      }
+    }
+    // 1 filter
+    else {
+      $ret_filters = $terms;
+    }
+
+    // Build menu item url string.
+    foreach ($ret_filters as $term) {
+      if ($term['term_path_alias']) {
+        $alias .= '/' . $term['term_path_alias'];
+      }
+    }
+
+  }
+  return $alias;
+}
+
+/**
+ * Get siblings of taxonomy term.
+ *
+ * Utility function that returns first siblings of a given taxonomy term.
+ *
+ * @param integer $tid
+ *   Term id of the term we for which we need to return siblings.
+ *
+ * @param integer $vid
+ *   (optional) Vocabulary id. Default is NULL.
+ *
+ * @return array
+ *   Array of term sibilings.
+ */
+function taxo_faceted_navigation_taxonomy_term_get_siblings($tid, $vid = NULL) {
+  // Get term parent, if no parent it means its first level,
+  // in which case just get first level terms for vocabulary.
+  $parent = taxo_faceted_navigation_taxonomy_term_get_parent($tid);
+
+  if ($parent) {
+    // There is parent, so get all children of a parent.
+    $siblings = taxonomy_get_children($parent, $vid = 0);
+  }
+  else {
+    // No parent so it means its first level, get first level children,
+    // i.e siblings.
+    $siblings = taxonomy_get_tree($vid, 0, 1, FALSE);
+  }
+  return $siblings;
+}
+
+/**
+ * Check if taxonomy term has parent.
+ *
+ * Utility function that checks if given taxonomy term has parent.
+ *
+ * @param integer $tid
+ *   Term id.
+ *
+ * @return integer
+ *   Returns integer if parent found, null if no parent found.
+ */
+function taxo_faceted_navigation_taxonomy_term_get_parent($tid) {
+  $result = db_query('SELECT parent FROM {taxonomy_term_hierarchy} WHERE tid = :tid', array(':tid' => $tid));
+  $parent = NULL;
+  foreach ($result as $record) {
+    $parent = $record->parent;
+  }
+  return $parent;
+}
+
+/**
+ * Get term id.
+ *
+ * For a given taxonomy term name return the term id.
+ *
+ * @param integer $term
+ *   Taxonomy term name.
+ *
+ * @return integer
+ *   Return the term id. return null if no term with this name found.
+ */
+function taxo_faceted_navigation_get_term_id_from_url_alias($term) {
+  $result = db_query('SELECT source FROM {url_alias} WHERE alias = :alias', array('alias' => $term));
+  foreach ($result as $record) {
+    // Record in the form taxonomy/term/no, for example taxonomy/term/21,
+    // so we just return 21.
+    $source = explode('/', $record->source);
+    return $source[2];
+  }
+  // If there were no records, i.e no term with this name, we return null.
+  return NULL;
+}
+
+/**
+ * Get taxonomy term url alias from term id.
+ *
+ * @param integer $tid
+ *   The term id
+ *
+ * @return string
+ *   Return url alias
+ */
+function taxo_faceted_navigation_get_term_url_alias_from_tid($tid) {
+  if ($tid) {
+    $url = $tid;
+    $result = db_query('SELECT alias FROM {url_alias} WHERE source = :source', array('source' => 'taxonomy/term/' . $tid));
+    foreach ($result as $record) {
+      $url = $record->alias;
+    }
+  }
+  else {
+    $url = '';
+  }
+  return $url;
+}
+
+/**
+ * Get term name using term id.
+ *
+ * @param integer $tid
+ *   Term id.
+ */
+function taxo_faceted_navigation_get_term_name_from_id($tid) {
+  $result = db_query('SELECT vid, name FROM {taxonomy_term_data} WHERE tid = :tid', array('tid' => $tid));
+  $term = array();
+  foreach ($result as $record) {
+    $term['name'] = filter_xss($record->name);
+    $term['vid'] = $record->vid;
+  }
+  return $term;
+}
+
+/**
+ * Print the page that filters are applied to.
+ *
+ * When user selects the filters print the page of node teasers.
+ * Only relevant nodes are printed, i.e result set of the applied
+ * filters.
+ *
+ * @return string
+ *   Formatted list of teasers.
+ */
+function taxo_faceted_navigation_print_landing_page() {
+
+  $selected_filters = taxo_faceted_navigation_get_selected_filters();
+  // Will hold term ids.
+  $tids = array();
+  $names = '';
+  $filters_number = 0;
+  foreach ($selected_filters as $filter) {
+    $filters_number++;
+    $tids[] = $filter['tid'];
+
+    $names .= ' ' . $filter['term_name'] . ',';
+  }
+  $names = rtrim($names, ", ");
+  $output = array();
+
+  if ($filters_number === 0) {
+     NULL;
+  }
+  elseif($filters_number === 1){
+    $names = '<em>Filter:</em> ' . $names;
+  }
+  else {
+    $names = '<em>Filters:</em> ' . $names;
+  }
+
+  $output['term_heading'] = array(
+    '#prefix' => '<h2 >',
+    '#suffix' => '</h2>',
+    '#markup' => $names,
+  );
+
+  $gotohome_if_nofilters = variable_get('taxo_faceted_navigation_redirect_to_home', FALSE);
+  if ($filters_number == 0 && $gotohome_if_nofilters) {
+    // but if user specifies different page redirect to that page
+    if($redirect_to_page = variable_get('taxo_faceted_navigation_redirect_to_page', FALSE)){
+      drupal_goto($redirect_to_page);
+    }
+    else {
+      drupal_goto();
+    }
+    
+  }
+
+  if ($nids = taxo_faceted_navigation_get_nodes_based_on_intersect_of_terms($selected_filters)) {
+
+    $nodes = node_load_multiple($nids);
+
+    $output += node_view_multiple($nodes);
+    $output['pager'] = array(
+      '#theme' => 'pager',
+      '#weight' => 2,
+    );
+  }
+  else {
+    $output['no_content'] = array(
+      '#prefix' => '<p>',
+      '#markup' => t('There is currently no content classified with this combination of filters. Try removing one or more filters'),
+      '#suffix' => '</p>',
+    );
+  }
+  return $output;
+}
+
+/**
+ * Get nodes tagged by given terms.
+ *
+ * Nodes have been associated with various terms. For terms passed in the
+ * url as the argument, return all nodes that have those terms associated
+ * with them.
+ * Nodes that have *all* of the  terms associated will be returned,
+ * i.e intersection of terms.
+ *
+ * @param array $selected_filters
+ *   Array or term id's
+ *
+ * @param array $node_types
+ *   (optional) default null. The array of strings, node types.
+ *   i.e story, page etc..
+ *
+ * @param string $text_compare
+ *   (optional) string
+ *
+ * @param string $text_compare_middle
+ *   (optional) string
+ */
+function taxo_faceted_navigation_get_nodes_based_on_intersect_of_terms($selected_filters, $text_compare = NULL, $text_compare_middle = NULL) {
+
+  $node_types = variable_get('taxo_faceted_navigation_content_type_options', array());
+  $nodeTypes = array();
+  foreach($node_types as $key => $value){
+    if($value !== 0 ){
+      $nodeTypes[] = $value;
+    }
+  }
+
+
+  $tids = array();
+  $values = array();
+  foreach ($selected_filters as $filter) {
+    $tids[] = $filter['tid'];
+  }
+  $joins = ' ';
+  $wheres = 'WHERE n.status = 1 ';
+  if (!empty($node_types)) {
+    $wheres .= " AND n.type in (:node_types)";
+    $values[':node_types'] = $node_types;
+  }
+  $counter = 0;
+  foreach ($tids as $key => $value) {
+    $joins .= 'INNER JOIN {taxonomy_index} ti' . $counter . ' ON n.nid = ti' . $counter . ' .nid ';
+    $wheres .= ' AND ti' . $counter . ' .tid = :tid' . $counter;
+    $values['tid' . $counter] = $value;
+    $counter++;
+  }
+  /* TO DO - implement free  text search in conjunction with faceted search
+  if ($text_compare) {
+  $wheres .= 'AND n.title LIKE \'' . $text_compare . '%\'';
+  }
+
+  if ($text_compare_middle) {
+  $wheres .= 'AND n.title LIKE \'%' . $text_compare_middle . '%\'';
+  }
+  */
+  $order = 'n.sticky DESC, n.changed DESC';
+  $sql = 'SELECT  n.nid 
+          FROM {node} n ' . $joins . '   
+          ' . $wheres .
+          ' ORDER BY ' . $order;
+  $result = db_query($sql, $values);
+  // Convert array of objects to array.
+  $arr_result = array();
+  foreach ($result as $record) {
+    $arr_result[] = $record->nid;
+  }
+  return  $arr_result;
+}
+
+/**
+ * Examine term and test for any children nodes.
+ *
+ * @param integer $vid
+ *   Vocabulary Id.
+ *
+ * @param integer $tid
+ *   Term id
+ *
+ * @return boolean
+ *   True if there are children taxonomy terms underneath given term.
+ */
+function taxo_faceted_navigation_get_subnodes($vid, $tid) {
+  // First check if term has nodes.
+  $result = db_query('SELECT nid FROM {taxonomy_index} WHERE tid = :tid', array(':tid' => $tid));
+  if ($result->rowCount()) {
+    return TRUE;
+  }
+  else {
+    // Get all children and check each child for nodes.
+    $children = taxonomy_get_tree($vid, $tid);
+    foreach ($children as $child) {
+      $result = db_query('SELECT nid FROM {taxonomy_index} WHERE tid = :tid', array(':tid' => $child->tid));
+      if ($result->rowCount()) {
+        return TRUE;
+      }
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Preprocess node url and append argument to it.
+ *
+ * The problem is that on the teaser listing page (landing page), when user
+ * clicks on the node title and goes into the node, the left menu will
+ * collapse, as a node url normally does not have information about
+ * applied filters.
+ * This function is used to fix this problem where the menu tree collapses
+ * if you go into the node, by appending this information in the form
+ * of url arguments.
+ *
+ * @param array $variables
+ *   Array of variables to preproccess.
+ *
+ * @return nothing
+ *   Does not return anything as $variables are passed by reference.
+ */
+function taxo_faceted_navigation_preprocess_node(&$variables) {
+  if ($variables['view_mode'] == 'teaser') {
+    $filters = taxo_faceted_navigation_get_selected_filters();
+    if ($filters) {
+      foreach ($filters as $filter) {
+        $terms[] = $filter['term_path_alias'];
+      }
+      $categories = implode('/', $terms);
+      $url = $variables['node_url'] . '/?categories=' . $categories;
+      $variables['node_url'] = $url;
+      global $base_url;
+      $variables['content']['links']['node']['#links']['node-readmore']['href'] = $base_url . $url;
+    }
+  }
+}
+
+/**
+ * Implements hook_permission().
+ */
+function taxo_faceted_navigation_permission() {
+  return array(
+    'view taxo facets' => array(
+      'title' => t('View taxonomy facets'),
+    ),
+  );
+}
+
+/**
+ * Get available node types.
+ *
+ * @return array
+ *  Array of node types
+ */
+function taxo_faceted_get_node_types(){
+  $nodeTypeOptions = array();
+  foreach(node_type_get_types() as $nodeType){
+    $nodeTypeOptions[$nodeType->type] =  t($nodeType->name);
+  }
+  return $nodeTypeOptions;
+}
+

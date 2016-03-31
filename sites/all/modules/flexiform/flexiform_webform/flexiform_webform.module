@@ -1,0 +1,541 @@
+<?php
+/**
+ * @file
+ * Module provides simple webform functionality.
+ */
+
+/**
+ * Implements hook_entity_info().
+ */
+function flexiform_webform_entity_info() {
+  $info = array();
+
+  // The entity that holds information about the entity types
+  $info['flexiform_webform'] = array(
+    'label' => t('Flexiform Webform'),
+    'entity class' => 'FlexiformWebform',
+    'controller class' => 'EntityAPIControllerExportable',
+    'base table' => 'flexiform_webform',
+    'fieldable' => FALSE,
+    'bundle of' => 'flexiform_webform_submission',
+    'exportable' => TRUE,
+    'entity keys' => array(
+      'id' => 'id',
+      'name' => 'webform',
+      'label' => 'label',
+    ),
+    'access callback' => 'flexiform_access',
+    'module' => 'flexiform_webform',
+    // Enable the entity API's admin UI.
+    'admin ui' => array(
+      'path' => 'admin/structure/flexiform_webforms',
+      'file' => 'flexiform_webform.admin.inc',
+      'controller class' => 'FlexiformWebformUIController',
+    ),
+  );
+
+  $info['flexiform_webform_submission'] = array(
+    'label' => t('Flexiform Webform Submission'),
+    // The entity class and controller class extend the classes provided by the
+    // Entity API
+    'entity class' => 'FlexiformWebformSubmission',
+    'controller class' => 'EntityApiController',
+    'fc handler class' => 'FlexiformFCHandler',
+    'base table' => 'flexiform_webform_submission',
+    'fieldable' => TRUE,
+    'entity keys' => array(
+      'id' => 'id',
+      'bundle' => 'webform',
+    ),
+    // Bundles are defined by the flexiforms below
+    'bundles' => array(),
+    // Bundle keys tell the FieldAPI how to extract information from the bundle objects
+    'bundle keys' => array(
+      'bundle' => 'webform',
+    ),
+    'label callback' => 'entity_class_label',
+    'uri callback' => 'entity_class_uri',
+    'access callback' => 'flexiform_webform_submission_access',
+    'module' => 'flexiform_webform',
+    'admin ui' => array(
+      'path' => 'admin/content/flexiform_webform_submissions',
+      'file' => 'flexiform_submission.admin.inc',
+      'controller class' => 'FlexiformWebformSubmissionUIController',
+      'menu wildcard' => '%flexiform_webform_submission',
+    ),
+    'view modes' => array(
+      'full' => array(
+        'label' => 'Full Display',
+        'custom settings' => FALSE,
+      ),
+      'summary' => array(
+        'label' => 'Summary',
+        'custom settings' => TRUE,
+      ),
+    ),
+  );
+
+  return $info;
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ *
+ * We are adding the info about the flexiform webforms via a hook to avoid a recursion
+ * issue as loading the flexiform_webforms requires the entity info as well.
+ *
+ * @todo This needs to be improved
+ */
+function flexiform_webform_entity_info_alter(&$entity_info) {
+  foreach (entity_load('flexiform_webform') as $webform) {
+    $entity_info['flexiform_webform_submission']['bundles'][$webform->webform] = array(
+      'label' => $webform->label,
+      'admin' => array(
+        'path' => 'admin/structure/flexiform_webforms/manage/%flexiform_webform',
+        'real path' => 'admin/structure/flexiform_webforms/manage/' . $webform->webform,
+        'bundle argument' => 4,
+        'access arguments' => array('administer flexiform_webforms'),
+      ),
+    );
+  }
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function flexiform_webform_module_implements_alter(&$implementations, $hook) {
+  $hooks = array(
+    'webform_submission_load',
+    'webform_submission_access',
+    'webform_submission_delete',
+  );
+
+  if (in_array($hook, $hooks)) {
+    unset($implementations['flexiform']);
+    unset($implementations['flexiform_webform']);
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function flexiform_webform_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'panelizer' && $plugin_type == 'entity') {
+    return "plugins/$plugin_type";
+  }
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function flexiform_webform_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'flexiform_webform') . '/views',
+  );
+}
+
+/**
+ * Implements hook_permission().
+ */
+function flexiform_webform_permission() {
+  $permissions = array(
+    'administer flexiform_webforms' => array(
+      'title' => t('Administer Flexiform Webforms'),
+      'description' => t('Edit and delete all flexiform webforms'),
+    ),
+    'administer flexiform_webform_submissions' => array(
+      'title' => t('Administer Flexiform Webform Submissions'),
+      'description' => t('Edit and delete all flexiform webform submissions'),
+    ),
+  );
+
+  //Generate permissions per flexiform_submission
+  foreach (entity_load('flexiform_webform') as $webform) {
+    $form_name = check_plain($webform->webform);
+    $permissions += array(
+      "submit a $form_name flexiform webform" => array(
+        'title' => t('Submit a %form_name Flexiform Webform (create a new submission)', array('%form_name' => $webform->label)),
+      ),
+      "edit own $form_name flexiform webform submissions" => array(
+        'title' => t('Edit own %form_name Flexiform Webform Submissions', array('%form_name' => $webform->label)),
+      ),
+      "edit any $form_name flexiform webform submission" => array(
+        'title' => t('Edit any %form_name Flexiform Webform Submission', array('%form_name' => $webform->label)),
+      ),
+      "view own $form_name flexiform webform submissions" => array(
+        'title' => t('View own %form_name Flexiform Webform Submissions', array('%form_name' => $webform->label)),
+      ),
+      "view any $form_name flexiform webform submission" => array(
+        'title' => t('View any %form_name Flexiform Webform Submissions', array('%form_name' => $webform->label)),
+      ),
+      "delete own $form_name flexiform webform submissions" => array(
+        'title' => t('View own %form_name Flexiform Webform Submissions', array('%form_name' => $webform->label)),
+      ),
+      "delete any $form_name flexiform webform submission" => array(
+        'title' => t('View any %form_name Flexiform Webform Submissions', array('%form_name' => $webform->label)),
+      ),
+    );
+  }
+  return $permissions;
+}
+
+/**
+ * Access callback for the entity API.
+ */
+function flexiform_webform_access($op, $type = NULL, $account = NULL) {
+  return user_access('administer flexiform_webforms', $account);
+}
+
+/**
+ * Determines whether the given user has access to a flexiform_webform_submission.
+ *
+ * @param $op
+ *   The operation being performed. One of 'view', 'update', 'create', 'delete'
+ *   or just 'edit' (being the same as 'create' or 'update').
+ * @param $submission
+ *   Optionally a flexiform_webform_submission or a flexiform_webform to check
+ *   access for. If nothing is given, access for all
+ *   flexiform_webform_submissions is determined.
+ * @param $account
+ *   The user to check for. Leave it to NULL to check for the global user.
+ *
+ * @return boolean
+ *   Whether access is allowed or not.
+ */
+function flexiform_webform_submission_access($op, $submission = NULL, $account = NULL) {
+  global $user;
+
+  if (empty($account)) {
+    $account = $user;
+  }
+
+  // Check if the user can administer everything. This always takes precident.
+  if (user_access('administer flexiform_webform_submissions', $account)) {
+    return TRUE;
+  }
+
+  // See if other modules want to influence access.
+  $access = module_invoke_all('flexiform_webform_submission_access', $op, $submission, $account);
+
+  // Any FALSE responses will always result in a denial.
+  if (in_array(FALSE, $access, TRUE)) {
+    return FALSE;
+  }
+  // Otherwise any TRUE response will give access.
+  elseif (in_array(TRUE, $access, TRUE)) {
+    return TRUE;
+  }
+
+  // If no other modules have any response, we'll fall back to our normal
+  // access checks.
+
+  // Special case for when adding new submissions.
+  if ($op == 'submit') {
+    $webform = $submission;
+    return user_access("submit a $webform flexiform webform", $account);
+  }
+  elseif (isset($flexiform_submission) && $webform = $submission->webform) {
+    // If we don't recognise the op, return FALSE.
+    if (!in_array($op, array('view','edit','delete'))) {
+      return FALSE;
+    }
+    // Check the user access for this op on this form.
+    elseif (user_access("$op any $webform flexiform submission", $account)) {
+      return TRUE;
+    }
+    elseif ($submission->user == $account->uid && user_access("$op own $webform flexiform submissions", $account)) {
+      return TRUE;
+    }
+  }
+}
+
+/**
+ * Load callback for flexiform webforms.
+ */
+function flexiform_webform_load($webform) {
+  return entity_load_single('flexiform_webform', $webform);
+}
+
+/**
+ * Load callback for flexiform_webform_submissions.
+ */
+function flexiform_webform_submission_load($id, $reset = FALSE) {
+  $entities = entity_load('flexiform_webform_submission', array($id), array(), $reset);
+  return reset($entities);
+}
+
+/**
+ * Implements hook_theme().
+ */
+function flexiform_webform_theme() {
+  return array(
+    'flexiform_webform_submission' => array(
+      'render element' => 'elements',
+      'template' => 'flexiform_webform_submission',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_create_instance().
+ *
+ * When a field is added to a flexiform_webform submission bundle add it to that forms form_fields.
+ */
+function flexiform_webform_field_create_instance($instance) {
+  // Only act on fields added to the flexiform_submission entity.
+  if ($instance['entity_type'] != 'flexiform_webform_submission') {
+    return;
+  }
+
+  $forms = db_select('flexiform', 'f')
+    ->fields('f', array('form', 'id'))
+    ->condition('base_entity', 'flexiform_webform_submission')
+    ->condition('base_entity_bundle', $instance['bundle'])
+    ->execute()
+    ->fetchAllAssoc('id');
+
+  $added_to = array();
+  foreach ($forms as $form) {
+    $flexiform = entity_load_single('flexiform', $form->form);
+
+    // Only add to forms that use the flexiform form builder.
+    if ($flexiform->builder != 'FlexiformBuilderFlexiform') {
+      continue;
+    }
+
+    $settings = array(
+      'element_name' => 'field:' . $instance['field_name'],
+      'entity_namespace' => 'base_entity',
+    );
+    $element = FlexiformElement::createElement($flexiform, $settings);
+    $flexiform->addElement($element);
+
+    $flexiform->save();
+    $added_to[] = l($flexiform->label, "admin/structure/flexiforms/manage/{$flexiform->form}/form-fields", array('attributes' => array('target' => '_blank')));
+  }
+
+  if (!empty($added_to)) {
+    $message = t('The field %field has been added to the following flexiforms:', array('%field' => $instance['label']));
+    $list = array(
+      '#theme' => 'item_list',
+      '#items' => $added_to,
+    );
+    $message .= drupal_render($list);
+    drupal_set_message($message);
+  }
+}
+
+function flexiform_webform_ui_get_clone_form($entity_type, $entity, $op = 'clone', $form_state = array()) {
+  $form_id = 'flexiform_webform_form';
+
+  // Do not use drupal_get_form(), but invoke drupal_build_form() ourself so
+  // we can prepulate the form state.
+  $form_state['wrapper_callback'] = 'entity_ui_main_form_defaults';
+  $form_state['entity_type'] = 'flexiform_webform';
+  form_load_include($form_state, 'inc', 'entity', 'includes/entity.ui');
+
+  $entity = clone $entity;
+  $entity->id = FALSE;
+  $entity->cloned_from = $entity->webform;
+  $entity->webform = FALSE;
+  $entity->is_new = TRUE;
+  $entity->status = ENTITY_CUSTOM;
+
+  // We don't pass the entity type as first parameter, as the implementing
+  // module knows the type anyway. However, in order to allow for efficient
+  // hook_forms() implementiations we append the entity type as last argument,
+  // which the module implementing the form constructor may safely ignore.
+  // @see entity_forms()
+  $form_state['build_info']['args'] = array($entity, $op, $entity_type);
+  return drupal_build_form($form_id, $form_state);
+}
+
+/**
+ * Implements hook_form_flexiform_field_configure_form_alter().
+ */
+function flexiform_webform_form_flexiform_field_configure_form_alter(&$form, &$form_state) {
+  // Do nothing if the fc module is not enabled.
+  if (!module_exists('fc')) {
+    return;
+  }
+
+  // Work out whether this form is being used as the completeness handler.
+  $flexiform = $form['#flexiform'];
+  if ($flexiform->base_entity != 'flexiform_webform_submission') {
+    return;
+  }
+  $webform = entity_load_single('flexiform_webform', $flexiform->base_entity_bundle);
+  if (empty($webform->data['fc']['form'])
+    || $webform->data['fc']['form'] != $flexiform->form) {
+    return;
+  }
+
+  // Currently only support field api elements.
+  $element = $form['#flexiform_element'];
+  if (!($element instanceof FlexiformElementField)) {
+    return;
+  }
+
+  $instance = $element->getInstance();
+  $field = $element->getField();
+  $settings = $instance['settings']['fc'];
+
+  $form['fc'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Field Complete'),
+    '#description' => t('Select whether this field instance should be included in completeness for its parent entity, plus any additional settings for this field type.'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#tree' => TRUE,
+  );
+
+  $form['fc']['fc_include'] = array(
+    '#type' => 'select',
+    '#title' => t('Include in field completeness'),
+    '#options' => array(
+      'always' => t('Always'),
+      'entity_exists' => t('If an Entity Exists'),
+      'element_complete' => t('If another element is complete'),
+      'never' => t('Never'),
+    ),
+    '#default_value' => !empty($settings['fc_include']) ? $settings['fc_include'] : 'never',
+    '#states' => array(
+      // Don't show if required is ticked.
+      'invisible' => array(
+        ':input[name="instance[required]"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  $form['fc']['fc_dummy'] = array(
+    '#type' => 'item',
+    '#title' => t('Field Complete cannot be selected when this field is set to be "Required".'),
+    '#states' => array(
+      // Only show if required is ticked.
+      'visible' => array(
+        ':input[name="instance[required]"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+
+  // Entity Options
+  $options = array();
+  foreach ($flexiform->entities as $namespace => $entInfo) {
+    $options[$namespace] = $entInfo['label'];
+  }
+  $form['fc']['fc_include__entity_exists'] = array(
+    '#type' => 'select',
+    '#title' => t('Entity'),
+    '#description' => t('The entity that must exist for this element to be included in field complete.'),
+    '#options' => $options,
+    '#default_value' => !empty($settings['fc_include__entity_exists']) ? $settings['fc_include__entity_exists'] : NULL,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="fc[fc_include]"]' => array('value' => 'entity_exists'),
+      ),
+    ),
+  );
+
+  // Element options.
+  $elOptions = array();
+  foreach ($flexiform->elements as $namespace => $elInfo) {
+    if (empty($elInfo['field_name'])) {
+      continue;
+    }
+
+    if ($namespace == $element->getElementNamespace()) {
+      continue;
+    }
+
+    $elOptions[$namespace] = $elInfo['label'];
+  }
+  $form['fc']['fc_include__element_complete'] = array(
+    '#type' => 'select',
+    '#title' => t('Element'),
+    '#description' => t('The element to check for completeness.'),
+    '#options' => $elOptions,
+    '#default_value' => !empty($settings['fc_include__element_complete']) ? $settings['fc_include__element_complete'] : NULL,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="fc[fc_include]"]' => array('value' => 'element_complete'),
+      ),
+    ),
+  );
+
+  $form['fc']['fc_include__element_complete_if_ignored'] = array(
+    '#type' => 'select',
+    '#title' => t('If the required element is not included:'),
+    '#description' => t('Sometimes the element that is depended on may be ignored by the completeness checker and so the completeness of that element will not be calculated. In this scenario should this element be included or excluded.'),
+    '#options' => array(
+      'include' => t('Include'),
+      'exclude' => t('Exclude'),
+    ),
+    '#default_value' => !empty($settings['fc_include__element_complete_if_ignored']) ? $settings['fc_include__element_complete_if_ignored'] : NULL,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="fc[fc_include]"]' => array('value' => 'element_complete'),
+      ),
+    ),
+  );
+
+  // Choose the right plugin for the field type.
+  $plugin = fc_get_plugin($field['type']);
+  if (!empty($plugin['zero can be empty'])) {
+    $form['fc']['fc_check_zero'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Treat a string zero as empty'),
+      '#description' => t('In some instances you may want a "0" to be the equivalent of empty. This only works for fields which uses the "value" field.'),
+      '#default_value' => !empty($settings['fc_check_zero']),
+      '#states' => array(
+        // Only show this field when the 'fc_include' checkbox is enabled.
+        'visible' => array(
+          ':input[name="fc[fc_include]"]' => array('checked' => TRUE),
+        ),
+      ),
+    );
+  }
+
+  if (!empty($plugin['can be empty'])) {
+    $form['fc']['fc_allow_empty'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Mark as complete if empty'),
+      '#description' => t('Permit complex fields (like entityreference and field_collection) to be marked as complete even if they are empty. So only check completeness if there is something to check.'),
+      '#default_value' => !empty($settings['fc_allow_empty']),
+      '#states' => array(
+        // Only show this field when the 'fc_include' checkbox is enabled.
+        'visible' => array(
+          ':input[name="fc[fc_include]"]' => array('checked' => TRUE),
+        ),
+      ),
+    );
+  }
+  else {
+    $form['fc']['fc_allow_empty'] = array(
+      '#type' => 'value',
+      '#value' => FALSE,
+    );
+  }
+
+  // Add any special fields
+  foreach ($plugin['field form'] as $setting => $element) {
+    $form['fc'][$setting] = $element;
+    $form['fc'][$setting] += array(
+      '#default_value' => !empty($settings[$setting]) ? $settings[$setting] : NULL,
+      '#states' => array(
+        // Only show this field when the 'fc_include' checkbox is enabled.
+        'visible' => array(
+          ':input[name="fc[fc_include]"]' => array('checked' => TRUE),
+        ),
+      ),
+    );
+  }
+
+  $form['#submit'][] = 'flexiform_webform_form_flexiform_field_configure_form_fc_submit';
+}
+
+function flexiform_webform_form_flexiform_field_configure_form_fc_submit($form, &$form_state) {
+  $flexiform = $form['#flexiform'];
+  $element = $form['#flexiform_element'];
+  $flexiform->elements[$element->getElementNamespace()]['instance']['settings']['fc'] = $form_state['values']['fc'];
+  $flexiform->save();
+}

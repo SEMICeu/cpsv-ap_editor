@@ -1,0 +1,37 @@
+<?php
+ 
+/**
+ * Reference: http://xebee.xebia.in/2011/06/14/drupal-webform-add-a-dynamic-select-option-list/
+ * The following piece of code is based on the blog post above written by Anubhav
+ */
+ 
+ 
+function new_tables_webform_submission_insert($node, $submission) {
+ 
+	drupal_set_message('test_boeja nid '. $node->nid.' en sid '.$submission->sid);
+		
+	$query ="DELETE FROM {webform_submitted_data} WHERE nid=$node->nid and sid =$submission->sid" ;
+	
+	db_query($query);
+	
+
+	$items = array();
+  
+	
+  if (function_exists('_get_webform_submission')) {
+    $items['input'] = array(
+      'title' => t('Public service input'),
+      'options callback' => '_get_webform_submission($node, $submission)',
+    );
+  }
+  
+  return $items;
+}
+
+ 
+function _get_webform_submission($node, $submission) {
+	
+	
+
+  return $submission_data;
+}

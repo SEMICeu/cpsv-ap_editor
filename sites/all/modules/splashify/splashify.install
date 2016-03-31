@@ -1,0 +1,100 @@
+<?php
+
+/**
+ * @file
+ * Handles installing, uninstalling and the requirements for Splashify.
+ */
+
+/**
+ * Implements hook_requirements().
+ *
+ * Make sure the jStorage library is installed on the site.
+ */
+function splashify_requirements($phase) {
+  $requirements = array();
+  $t = get_t();
+
+  // Make sure we we can access the necessary libraries.
+  if ($phase == 'runtime') {
+    // jStorage
+    $jstorage = libraries_detect('jstorage');
+    $installed = ($jstorage && !empty($jstorage['installed']));
+
+    if ($installed) {
+      // Check PHPMailer file integrity.
+      $path = DRUPAL_ROOT . '/' . $jstorage['library path'] . '/';
+
+      $file_integrity = file_exists($path . 'jstorage.min.js');
+
+      if (!$file_integrity) {
+        $requirements['splashify_jstorage_integrity'] = array(
+          'title' => $t('Splashify library file integrity'),
+          'description' => $t('Cannot find the file "jstorage.min.js".'),
+          'value' => '',
+          'severity' => REQUIREMENT_ERROR,
+        );
+      }
+    }
+    else {
+      $requirements['splashify_jstorage'] = array(
+        'title' => $t('Splashify'),
+        'description' => $t('The jStorage library could not be found. See the README.txt file for more information.'),
+        'value' => '',
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+
+    // Mobile Detect
+    $is_mobile_enabled = variable_get('splashify_when_mobile', 0);
+
+    if ($is_mobile_enabled) {
+      // Verify the Mobile Detect library is installed.
+      $mobile_detect = libraries_load('Mobile_Detect');
+      if (!$mobile_detect['installed']) {
+        $requirements['splashify_Mobile_Detect'] = array(
+          'title' => $t('Splashify'),
+          'description' => $t('Mobile splash is enabled, but could not find the Mobile Detect library. See the readme.'),
+          'value' => '',
+          'severity' => REQUIREMENT_ERROR,
+        );
+      }
+    }
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implements hook_uninstall().
+ *
+ * Deletes all of the variables this module creates via variable_set().
+ */
+function splashify_uninstall() {
+  variable_del('splashify_when_anonymous');
+  variable_del('disable_referrer_check');
+
+  // Desktop variables.
+  variable_del('splashify_when_desktop_frequency');
+  variable_del('splashify_where_desktop_page');
+  variable_del('splashify_where_desktop_listpages');
+  variable_del('splashify_where_desktop_opposite');
+  variable_del('splashify_what_desktop_mode');
+  variable_del('splashify_what_desktop_content');
+  variable_del('splashify_what_desktop_pagetitle');
+  variable_del('splashify_how_desktop_mode');
+  variable_del('splashify_how_desktop_size');
+  variable_del('splashify_when_roles');
+  variable_del('splashify_when_roles_options');
+
+  // Mobile variables.
+  variable_del('splashify_when_mobile');;
+  variable_del('splashify_when_mobile_test');
+  variable_del('splashify_when_mobile_frequency');
+  variable_del('splashify_where_mobile_page');
+  variable_del('splashify_where_mobile_listpages');
+  variable_del('splashify_where_mobile_opposite');
+  variable_del('splashify_what_mobile_mode');
+  variable_del('splashify_what_mobile_content');
+  variable_del('splashify_what_mobile_pagetitle');
+  variable_del('splashify_how_mobile_mode');
+}

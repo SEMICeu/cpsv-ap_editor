@@ -1,0 +1,24 @@
+name = Flexiform Webforms
+descriptions = Tools to help using flexiform to produce useful webforms.
+core = 7.x
+package = Flexiform
+
+dependencies[] = flexiform
+dependencies[] = entity
+
+files[] = flexiform_webform.entity.inc
+files[] = flexiform_webform.admin.inc
+files[] = flexiform_webform_submission.entity.inc
+files[] = flexiform_webform_submission.admin.inc
+files[] = flexiform_webform.fc.inc
+files[] = views/flexiform_webform_submission_handler_link_field.inc
+files[] = views/flexiform_webform_submission_handler_delete_link_field.inc
+files[] = views/flexiform_webform_submission_handler_flexiform_submission_operations_field.inc
+files[] = views/flexiform_webform_submission_handler_edit_link_field.inc
+
+; Information added by Drupal.org packaging script on 2015-01-14
+version = "7.x-1.0-rc3"
+core = "7.x"
+project = "flexiform"
+datestamp = "1421229781"
+

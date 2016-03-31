@@ -1,0 +1,112 @@
+<?php
+
+/**
+ * @file
+ * Install, update, and uninstall functions for the Popup On Load module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function popup_onload_schema() {
+  $schema = array();
+
+  $schema['popup_onload'] = array(
+    'description' => 'The base table for popup entities.',
+    'fields' => array(
+      'popup_id' => array(
+        'description' => 'Primary Key: Identifier for a popup.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'bundle_type' => array(
+        'description' => 'The type of the popup.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'language' => array(
+        'description' => 'The language of the popup.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'name' => array(
+        'description' => 'The name of the popup - a human-readable identifier.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'body' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'description' => 'The body of the popup.',
+      ),
+      'format' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'description' => 'Format of the popup\'s body.',
+      ),
+      'width' => array(
+        'description' => 'The width of the popup.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'height' => array(
+        'description' => 'The height of the popup.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'fixed_position' => array(
+        'description' => 'Indicate whether the popup position is fixed in the browser.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('popup_id'),
+    'indexes' => array(
+      'bundle_type' => array('bundle_type'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function popup_onload_uninstall() {
+  field_attach_delete_bundle('popup_onload', 'popup_onload_basic');
+
+  // Include module to resolve constants' names.
+  require_once 'popup_onload.module';
+
+  // Delete all popup_onload-related variables.
+  variable_del(POPUP_ONLOAD_VAR_SORT_METHOD);
+  variable_del(POPUP_ONLOAD_VAR_COOKIE_NAME);
+  variable_del(POPUP_ONLOAD_VAR_COOKIE_LIFETIME);
+  variable_del(POPUP_ONLOAD_VAR_DISPLAY_DELAY);
+  variable_del(POPUP_ONLOAD_VAR_USE_RULES);
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * 1. Convert popup cookie lifetime value into seconds.
+ * 2. Add a variable with popup cookie name.
+ */
+function popup_onload_update_7101() {
+  $popup_cookie_lifetime = variable_get(POPUP_ONLOAD_VAR_COOKIE_LIFETIME, 14);
+  // Convert days to seconds.
+  variable_set(POPUP_ONLOAD_VAR_COOKIE_LIFETIME, $popup_cookie_lifetime * 24 * 60 * 60);
+  // Set default popup cookie name.
+  variable_set(POPUP_ONLOAD_VAR_COOKIE_NAME, 'popup_onload_cookie_name');
+}

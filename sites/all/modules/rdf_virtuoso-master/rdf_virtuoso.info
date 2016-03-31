@@ -1,0 +1,7 @@
+name = RDF indexer for Virtuoso Open Source
+description = Allows to index Drupal RDF data in Virtuoso Open Source store.
+dependencies[] = rdf_indexer
+core = 7.x
+package = RDF
+configure = admin/config/search/search_api
+files[] = service.virtuoso.inc

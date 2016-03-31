@@ -1,0 +1,555 @@
+<?php
+
+/**
+ * @file
+ * Sets up the base table for our entity and a table to store information about
+ * the entity types.
+ */
+
+
+/**
+ * Implements hook_schema().
+ */
+function flexiform_schema() {
+  $schema = array();
+
+  $schema['flexiform'] = array(
+    'description' => 'Stores information about defined flexiforms.',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique flexiform identifier.',
+      ),
+      'form' => array(
+        'description' => 'The machine-readable name of this flexiform.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => 'The human-readable name of this flexiform.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'form_group' => array(
+        'description' => 'The group that this flexiform belongs to.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 'general',
+      ),
+      'builder' => array(
+        'description' => 'The builder class for this form',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 'FlexiformBuilderFlexiform',
+      ),
+      'base_entity' => array(
+        'description' => 'The base entity type of the form.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'base_entity_bundle' => array(
+        'description' => 'The base entity type of the form.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'advanced' => array(
+        'description' => 'Select the type of form that is submitted. 0 for simple, 1 for complex/advanced',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => 'The weight of this flexiform in relation to others.',
+      ),
+      'entities' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of entities involved in this flexiform.',
+      ),
+      'elements' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of elements related to this flexiform.',
+      ),
+      'displays' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of displays of this flexiform.',
+      ),
+      'settings' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of general settings for this flexiform.',
+      ),
+    ) + entity_exportable_schema_fields(),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'form' => array('form'),
+    ),
+  );
+
+  $schema['flexiform_tags'] = array(
+    'fields' => array(
+      'id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'The primary identifier of the flexiform.',
+      ),
+      'tag' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'description' => 'The tag string associated with this flexiform',
+      ),
+    ),
+    'primary key' => array('id', 'tag'),
+    'foreign keys' => array(
+      'table' => 'flexiform',
+      'columns' => array('id' => 'id'),
+    ),
+  );
+
+  return $schema;
+}
+
+function flexiform_update_7001() {
+  $spec = array(
+    'description' => 'Select the type of form that is submitted. 0 for simple, 1 for complex/advanced',
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+  );
+
+  db_add_field('flexiform', 'advanced', $spec);
+}
+
+/**
+ * Add the group field to flexiforms.
+ */
+function flexiform_update_7002() {
+  $spec = array(
+    'description' => 'The group that this flexiform belongs to.',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => 'general',
+  );
+  $keys = array(
+    'indexes' => array(
+      'form_group' => array('form_group'),
+    ),
+  );
+  db_add_field('flexiform', 'form_group', $spec, $keys);
+}
+
+/**
+ * Add the base_entity and base_entity_bundle.
+ */
+function flexiform_update_7003() {
+  db_add_field('flexiform', 'base_entity', array(
+    'description' => 'The base entity type of the form.',
+    'type' => 'varchar',
+    'length' => 128,
+    'not null' => TRUE,
+    'default' => '',
+  ),
+  array(
+    'indexes' => array(
+      'base_entity' => array('base_entity'),
+    ),
+  ));
+
+  db_add_field('flexiform', 'base_entity_bundle', array(
+    'description' => 'The base entity type of the form.',
+    'type' => 'varchar',
+    'length' => 128,
+    'not null' => TRUE,
+    'default' => '',
+  ));
+
+  db_change_field('flexiform', 'fields', 'elements', array(
+    'type' => 'text',
+    'not null' => FALSE,
+    'size' => 'big',
+    'serialize' => TRUE,
+    'description' => 'A serialized array of elements related to this flexiform.',
+  ));
+
+  // Update existing flexiform configurations.
+  db_update('flexiform')
+    ->fields(array(
+      'base_entity' => 'flexiform_submission',
+    ))
+    ->expression('base_entity_bundle', 'form')
+    ->execute();
+
+  foreach (entity_load('flexiform') as $flexiform) {
+    $flexiform->entities['base_entity'] = $flexiform->entities['this_submission'];
+    $flexiform->entities['base_entity']['getter'] = 'base_entity';
+    $flexiform->entities['base_entity']['namespace'] = 'base_entity';
+
+    foreach ($flexiform->elements as $entity_namespace => $elements) {
+      if ($entity_namespace == 'this_submission') {
+        $flexiform->elements['base_entity'] = $elements;
+        unset($flexiform->elements['this_submission']);
+
+        foreach ($flexiform->elements['base_entity'] as &$element) {
+          $element['entity_namespace'] = 'base_entity';
+        }
+      }
+    }
+
+    $flexiform->save();
+  }
+}
+
+/**
+ * Add the path fields to the flexiform table.
+ */
+function flexiform_update_7004() {
+  db_add_field('flexiform', 'path', array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+    'description' => 'The path to a new submission of this form.',
+  ));
+
+  db_add_field('flexiform', 'edit_path', array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+    'description' => 'The path to an edit version of this form.',
+  ));
+
+  db_update('flexiform')
+    ->expression('path', "CONCAT('flexiform/', form)")
+    ->expression('edit_path', "CONCAT('flexiform/', form, '/%')")
+    ->execute();
+}
+
+/**
+ * Add the builder field to flexiform.
+ */
+function flexiform_update_7005() {
+  db_add_field('flexiform', 'builder', array(
+    'description' => 'The builder class for this form',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => 'FlexiformFlexiform',
+  ));
+
+  // Update existing flexiform configurations.
+  db_update('flexiform')
+    ->fields(array(
+      'builder' => 'FlexiformBuilderFlexiform',
+    ))
+    ->execute();
+}
+
+/**
+ * Convert forms to the new format.
+ */
+function flexiform_update_7006() {
+  $flexiforms = entity_load('flexiform');
+
+  foreach ($flexiforms as $flexiform) {
+    if (empty($flexiform->elements)) {
+      continue;
+    }
+
+    $flexiform_elements = $flexiform->elements;
+    $flexiform->elements = array();
+
+    foreach ($flexiform_elements as $entity_namespace => $elements) {
+      foreach ($elements as $element_name => $settings) {
+        $type = $settings['type'];
+        $class_name = 'FlexiformElement'.ucfirst($type);
+
+        unset($settings['type']);
+
+        $settings['element_name'] = $element_name = $type . ':' . $element_name;
+        $settings['enitity_namespace'] = $entity_namespace;
+
+        $element = new $class_name($flexiform, $settings);
+        $flexiform->addElement($element);
+      }
+    }
+
+    $flexiform->save();
+
+    if (module_exists('flexiform_element_group')) {
+      $groups = field_group_info_groups('flexiform', $flexiform->form, 'form', TRUE);
+      foreach ($groups as $group) {
+        foreach ($group->children as $key => $element_name) {
+          $group->children[$key] = preg_replace('/\_\_/', ':', $element_name, 2);
+        }
+        ctools_export_crud_save('field_group', $group);
+      }
+    }
+  }
+}
+
+/**
+ * Move flexiform_submission stuff to a submodule.
+ */
+function flexiform_update_7007() {
+  module_enable(array('flexiform_webform'), FALSE);
+
+  db_update('field_config_instance')
+    ->fields(array(
+      'entity_type' => 'flexiform_webform_submission'
+    ))
+    ->condition('entity_type', 'flexiform_submission')
+    ->execute();
+  drupal_flush_all_caches();
+
+  // Make flexiform webforms out of all flexiforms with the base entity set to
+  // flexiform submission.
+  $webforms = db_select('flexiform', 'f')
+    ->fields('f', array('label', 'form', 'id'))
+    ->condition('base_entity', 'flexiform_submission')
+    ->execute()
+    ->fetchAllAssoc('form');
+
+  foreach ($webforms as $record) {
+    $values = array(
+      'id' => $record->id,
+      'label' => $record->label,
+      'webform' => $record->form,
+    );
+
+    $flexiform_webform = entity_create('flexiform_webform', $values);
+    $flexiform_webform->save();
+
+    foreach (field_info_instances('flexiform_webform_submission', $record->form) as $instance) {
+      $tables = array(
+        'field_data_' . $instance['field_name'],
+        'field_revision_' . $instance['field_name'],
+      );
+
+      foreach ($tables as $table) {
+        db_update($table)
+          ->fields(array(
+            'entity_type' => 'flexiform_webform_submission',
+          ))
+          ->condition('entity_type', 'flexiform_submission')
+          ->condition('bundle', $record->form)
+          ->execute();
+      }
+    }
+
+    $flexiform = entity_load_single('flexiform', $record->form);
+    $flexiform->entities['base_entity']['entity_type'] = 'flexiform_webform_submission';
+    $flexiform->save();
+
+    if (module_exists('field_group')) {
+      $groups = field_group_info_groups('flexiform_submission', $record->form, 'form', TRUE);
+      foreach ($groups as $group) {
+        $group->entity_type = 'flexiform_webform_submission';
+        $bits = explode('|', $group->identifier);
+        $bits[1] = 'flexiform_webform_submission';
+        $group->identifier = implode('|', $bits);
+        ctools_export_crud_save('field_group', $group);
+      }
+    }
+  }
+
+  // Update the base entities on these flexiforms.
+  if (!empty($webforms)) {
+    db_update('flexiform')
+      ->fields(array('base_entity' => 'flexiform_webform_submission'))
+      ->condition('form', array_keys($webforms))
+      ->execute();
+  }
+
+  // Migrate existing submissions to the new entity tables.
+  $query = db_select('flexiform_submission', 'f');
+  $query->addField('f', 'flexiform_submission_id', 'id');
+  $query->addField('f', 'form', 'webform');
+  $query->addField('f', 'language', 'language');
+  $query->addField('f', 'created', 'created');
+  $query->addField('f', 'changed', 'changed');
+  $query->addField('f', 'user', 'user');
+
+  db_insert('flexiform_webform_submission')
+    ->from($query)
+    ->execute();
+
+  db_drop_table('flexiform_submission');
+}
+
+/**
+ * Move targets for entity reference fields.
+ */
+function flexiform_update_7008() {
+  if (!module_exists('entityreference')) {
+    return;
+  }
+
+  foreach (field_read_fields(array('type' => 'entityreference')) as $field) {
+    switch ($field['settings']['target_type']) {
+      case 'flexiform_submission':
+        $field['settings']['target_type'] = 'flexiform_webform_submission';
+        break;
+      case 'flexiform':
+        $field['settings']['target_type'] = 'flexiform_webform';
+        break;
+      default:
+        continue;
+    }
+
+    field_update_field($field);
+  }
+}
+
+/**
+ * Add displays field to the flexiform table.
+ */
+function flexiform_update_7009() {
+  db_add_field('flexiform', 'displays', array(
+    'type' => 'text',
+    'not null' => FALSE,
+    'size' => 'big',
+    'serialize' => TRUE,
+    'description' => 'A serialized array of displays of this flexiform.',
+  ));
+
+  $rows = db_select('flexiform', 'f')
+    ->fields('f', array('form', 'path', 'edit_path'))
+    ->execute()
+    ->fetchAllAssoc('form');
+
+  foreach (entity_load('flexiform') as $form) {
+    $row = $rows[$form->form];
+
+    if (!empty($row->path)) {
+      $form->displays['flexiform_create_entity_page'] = array(
+        'enabled' => TRUE,
+        'title' => $form->label,
+        'path' => $row->path,
+      );
+    }
+
+    if (!empty($row->edit_path)) {
+      $form->displays['flexiform_edit_entity_page'] = array(
+        'enabled' => TRUE,
+        'title' => $form->label,
+        'path' => $row->edit_path,
+      );
+    }
+
+    $form->save();
+  }
+
+  db_drop_field('flexiform', 'path');
+  db_drop_field('flexiform', 'edit_path');
+}
+
+/**
+ * Add flexiform tags table.
+ */
+function flexiform_update_7010() {
+  $schema = array(
+    'fields' => array(
+      'id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'The primary identifier of the flexiform.',
+      ),
+      'tag' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'description' => 'The tag string associated with this flexiform',
+      ),
+    ),
+    'primary key' => array('id', 'tag'),
+    'foreign keys' => array(
+      'table' => 'flexiform',
+      'columns' => array('id' => 'id'),
+    ),
+  );
+  db_create_table('flexiform_tags', $schema);
+}
+
+/**
+ * Switch to keying displays by class name.
+ */
+function flexiform_update_7011(&$sandbox) {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'flexiform');
+
+  if (!isset($sandbox['progress'])) {
+    $sandbox['progress'] = 0;
+    $sandbox['last_id'] = 0;
+    $count = clone $query;
+    $count->count();
+    $sandbox['max'] = $count->execute();
+  }
+
+  $map = array(
+    'flexiform_create_entity_page' => 'FlexiformDisplayCreatePage',
+    'flexiform_edit_entity_page' => 'FlexiformDisplayEditPage',
+    'flexiform_add_entity_pane' => 'FlexiformDisplayAddPane',
+    'flexiform_edit_entity_pane' => 'FlexiformDisplayEditPane',
+    'flexiform_user_category' => 'FlexiformDisplayUserCategory',
+  );
+
+  $query->entityCondition('entity_id', $sandbox['last_id'], '>');
+  $query->range(0, 20);
+
+  $results = $query->execute();
+  if (!empty($results['flexiform'])) {
+    foreach (entity_load('flexiform', array_keys($results['flexiform'])) as $flexiform) {
+      $displays = array();
+      foreach ($flexiform->displays as $old_key => $settings) {
+        $displays[$map[$old_key]] = $settings;
+      }
+      $flexiform->displays = $displays;
+      $flexiform->save();
+
+      $sandbox['progress']++;
+      $sandbox['last_id'] = $flexiform->id;
+    }
+  }
+
+  $sandbox['#finished'] = !empty($sandbox['max']) ? $sandbox['progress'] / $sandbox['max'] : 1;
+}
+
+/**
+ * Add the settings column to flexiforms.
+ */
+function flexiform_update_7012() {
+  db_add_field('flexiform', 'settings', array(
+    'type' => 'text',
+    'not null' => FALSE,
+    'size' => 'big',
+    'serialize' => TRUE,
+    'description' => 'A serialized array of general settings for this flexiform.',
+  ));
+}

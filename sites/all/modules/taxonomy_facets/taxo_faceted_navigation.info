@@ -1,0 +1,15 @@
+name = Taxonomy Faceted Navigation
+description = "Taxonomy Faceted Navigation"
+dependencies[] = taxonomy
+dependencies[] = path
+dependencies[] = token
+core = 7.x
+; NEW LINE
+configure = admin/config/search/tax_faceted_nav
+
+; Information added by Drupal.org packaging script on 2016-01-29
+version = "7.x-1.6"
+core = "7.x"
+project = "taxonomy_facets"
+datestamp = "1454079840"
+

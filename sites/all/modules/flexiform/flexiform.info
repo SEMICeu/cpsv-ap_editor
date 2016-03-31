@@ -1,0 +1,76 @@
+name = "Flexible Forms"
+description = "Build forms based on multiple entities."
+core = 7.x
+
+dependencies[] = entity
+dependencies[] = views
+
+files[] = flexiform_submission.admin.inc
+files[] = flexiform_submission.entity.inc
+files[] = flexiform.admin.inc
+files[] = flexiform.entity.inc
+files[] = includes/flexiform.flexiform.inc
+
+; Displays
+files[] = includes/flexiform.display.inc
+files[] = includes/display/null.display.inc
+files[] = includes/display/page.display.inc
+files[] = includes/display/add_page.display.inc
+files[] = includes/display/edit_page.display.inc
+files[] = includes/display/add_pane.display.inc
+files[] = includes/display/edit_pane.display.inc
+files[] = includes/display/user_category.display.inc
+
+; Builders
+files[] = includes/flexiform.builder.inc
+files[] = includes/builder/flexiform.builder.inc
+files[] = includes/builder/entity_form.builder.inc
+
+; Elements
+files[] = includes/flexiform.element.inc
+files[] = includes/flexiform.element_repeatable.inc
+files[] = includes/flexiform.element_field.inc
+files[] = includes/element/flexiform.element.inc
+files[] = includes/element/field.element.inc
+files[] = includes/element/node_title.element.inc
+files[] = includes/element/node_promote.element.inc
+files[] = includes/element/node_status.element.inc
+files[] = includes/element/node_sticky.element.inc
+files[] = includes/element/custom_html.element.inc
+files[] = includes/element/node_author.element.inc
+files[] = includes/element/user_mail.element.inc
+files[] = includes/element/user_name.element.inc
+files[] = includes/element/user_pass.element.inc
+files[] = includes/element/user_roles.element.inc
+files[] = includes/element/fields/entityreference.inc
+files[] = includes/element/fields/field_collection.inc
+files[] = includes/element/fields/taxonomy_term_reference.inc
+
+; Form Entities
+files[] = includes/flexiform.form_entity.inc
+files[] = includes/form_entity/base.form_entity.inc
+files[] = includes/form_entity/current_user.form_entity.inc
+files[] = includes/form_entity/entityreference.form_entity.inc
+files[] = includes/form_entity/field_collection.form_entity.inc
+files[] = includes/form_entity/legacy.form_entity.inc
+files[] = includes/form_entity/load.form_entity.inc
+files[] = includes/form_entity/new.form_entity.inc
+files[] = includes/form_entity/party_data_set.form_entity.inc
+files[] = includes/form_entity/party_from_user.form_entity.inc
+files[] = includes/form_entity/reply.form_entity.inc
+
+; Form Entity Manager
+files[] = includes/flexiform.form_entity_manager.inc
+
+; Plugins and Views
+files[] = includes/views/handlers/flexiform_handler_field_add_page_url.inc
+files[] = includes/views/handlers/flexiform_handler_field_tags.inc
+files[] = includes/views/handlers/flexiform_handler_filter_tags.inc
+
+
+; Information added by Drupal.org packaging script on 2015-01-14
+version = "7.x-1.0-rc3"
+core = "7.x"
+project = "flexiform"
+datestamp = "1421229781"
+

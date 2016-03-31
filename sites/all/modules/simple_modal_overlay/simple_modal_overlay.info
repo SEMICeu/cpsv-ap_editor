@@ -1,0 +1,14 @@
+name = Simple modal overlay
+description = Provides a simple API for displaying messages and content in an overlay.
+core = 7.x
+version = 7.x-1.x-dev
+package = Other
+
+stylesheets[all][] = css/simple_modal_overlay.css
+scripts[] = js/simple_modal_overlay.js
+; Information added by Drupal.org packaging script on 2015-05-12
+version = "7.x-1.0-alpha2"
+core = "7.x"
+project = "simple_modal_overlay"
+datestamp = "1431409081"
+

@@ -1,0 +1,99 @@
+
+2013-09-14
+-----------
+Fixed the following bugs:
+- The "splash" parameter would show up in urls. This is fixed.
+- With referrers that included the url of the site as a parameter (like in
+Google search results), the JS was thinking it was coming from the current
+site. This should be fixed.
+
+2013-03-11
+-----------
+Updated the version detection code for the Mobile Detect library. Fixed a few
+browser compatibility issues. Launched a full release of the module.
+
+2012-12-20
+-----------
+Took out the manual integration of the Mobile Detect library and used the
+libraries module instead (similar to what we are doing with the jStorage
+library).
+
+This would createa a fatal error when using the mobile_switch module, which
+also uses the Mobile Detect library. This makes the dependency transparent.
+
+2012-11-10
+-----------
+With the help of the community, refactored the JS to allow for anonymous
+page caching. This allows the system to be fully functional with this
+setting turned on. This also improved the speed of the JavaScript. Did
+extensive testing in all browsers.
+
+I also removed the Mobile_Tools dependency for setting mobile options. Instead
+I include a copy of the lightweight Mobile Detect library
+(http://code.google.com/p/php-mobile-detect/). We are just using it to detect
+whether the user is on a mobile device. I implemented this after I discovered
+the latest Mobile Tools broke the module.
+
+2012-07-02
+-----------
+Created a "Show only to anonymous users" option on the When tab. Also added
+an option on the Where tab that allows you to specify the pages where the
+splash page should not show up.
+
+2012-06-30
+-----------
+Added a new dependency using the pageapi. This module provides a hook that
+allows splashify to work, regardless of the cache settings used on the site.
+Also added an iframe config option to the admin to configure using the iframe
+in colorbox.
+
+2012-02-17
+-----------
+Fixed an issue with the sequential option when using the lightbox. It was
+hitting the JS code in the drupal.behaviours attach twice. Wrapped all of
+the JS code in a .load to prevent this from happening.
+
+Did some testing with caching the JS and testing to see if modifying the
+drupal cache settings break the splash page. Discovered that setting "Cache
+pages for anonymous users" would break the splash functionality. But
+aggregating the JS code did not break the splash page.
+
+2012-02-16
+-----------
+Refactored the admin area to use AJAX for showing certain fields.
+
+2012-02-12
+-----------
+Issue #1425392 by klausi: Re-worked the JS and applied some major changes
+
+- Surrounded some output text that I missed with the t() function.
+- Took out the help text from the main config page and included it in
+hook_help(). This is in the .module file that was in the previous commit.
+- Took out some basic JavaScript and put it into a separate JS file.
+- Took out using the filter_xss() function where it was needed.
+- Simplified a few if statements.
+- I re-wrote the whole splash display mechanism. All of the JavaScript is now
+in a separate file and we send drupal settings variables to use in the JS. This
+makes the JS much easier to maintain and debug. This required a lot of
+re-working in the splashify_init() function.
+
+2012-02-11
+-----------
+Implemented the Libraries module for including and requiring the jStorage
+jquery library.
+
+2012-02-07
+-----------
+Fixed issue #1430676. The problem was not happening on my local server, but was
+happening on my dev server. Fixed the problem by putting the JS call in the
+<head> after the colorbox js/css is included.
+
+2012-02-02
+-----------
+Fixed issue #1425392 by vaibhavjain: Moved files to 7.x-1.x branch. Also fixed
+some minor code formatting issues.
+
+2012-01-31
+-----------
+Created a sandbox project for splashify. At this point I had the base code for
+the system already created.

@@ -1,0 +1,78 @@
+/* Background behind the overlay. */
+div.messages.simple-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 200;
+
+  width: 100%;
+  height: 100%;
+
+  background: rgba(0, 0, 0, 0.6);
+
+  margin: 0;
+  border: none;
+  padding: 10% 0;
+}
+
+/* Overlay */
+div.messages.simple-overlay .message-inner {
+  position: relative;
+  z-index: 201;
+
+  width: 600px;
+
+  margin: 0 auto;
+  padding: 0;
+
+  box-shadow: 0 2px 15px #57595a;
+  -moz-box-shadow: 0 2px 15px #57595a;
+  -webkit-box-shadow: 0 2px 15px #57595a;
+  filter: progid:DXImageTransform.Microsoft.Shadow(color='#57595A', direction='180', strength='5');
+
+  border-radius: 3px;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-color: #6bb0cb;
+
+  color: #aeaaa5;
+  overflow: hidden;
+  background-color: white;
+}
+
+/* Title */
+div.messages.simple-overlay .message-inner .title {
+  float: left; /* LTR */
+
+  width: 90%;
+
+  padding: 1em;
+
+  color: #2698f2;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+/* Message content area. */
+div.messages.simple-overlay .content {
+  clear: both;
+  position: relative;
+
+  width: 90%;
+
+  padding: 0 1em 1em;
+}
+
+/* Close button */
+div.messages.simple-overlay .message-inner .simple-overlay-close {
+  display: block;
+
+  position: absolute;
+  top: 1em;
+  right: 1em; /* LTR */
+
+  width: 18px;
+  height: 17px;
+
+  background: url('../images/btn_overlay-close.png') no-repeat 0 0;
+}

@@ -1,0 +1,7 @@
+
+; $Id$
+name = Save data in seperate tables
+description = Save webform data in preset tables
+package = "Custom"
+core = 7.x
+version = 7.x-1.0

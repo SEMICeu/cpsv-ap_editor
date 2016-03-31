@@ -1,0 +1,320 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Allows users to create and publish RDF Schema vocabularies.
+ `*/
+
+/**
+ * Implementation of hook_init().
+ */
+function neologism_init() {
+  drupal_add_js(drupal_get_path('module', 'neologism') . '/neologism.js');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function neologism_menu() {
+  $items = array();
+
+  $items["neologism"] = array(
+    'title' => 'Vocabulary Workspaces',
+    'description' => "Show a list of Vocabulary Workspaces.",
+    'page callback' => 'neologism_view_index',
+    'access arguments' => array('access content'),
+  );
+  $items['node/%neologism_vocabulary/add-class'] = array(
+    'title' => 'Add new class',
+    'page callback' => 'neologism_add_term',
+    'page arguments' => array('class', 1),
+    'access callback' => 'node_access',
+    'access arguments' => array('update', 1),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+  );
+  $items['node/%neologism_vocabulary/add-property'] = array(
+    'title' => 'Add new property',
+    'page callback' => 'neologism_add_term',
+    'page arguments' => array('property', 1),
+    'access callback' => 'node_access',
+    'access arguments' => array('update', 1),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 11,
+  );
+  return $items;
+}
+
+/**
+ * Menu callback for the "Add property" and "Add class" pages
+ *
+ * @param $type
+ *   'class' or 'property'
+ * @param $vocabulary
+ *   The vocabulary owning the new term
+ *
+ * @return
+ *   A built form
+ */
+function neologism_add_term($type, $vocabulary) {
+
+  global $user;
+  // @todo display an error message
+  if (!node_access('create', $type)) {
+    return;
+  }
+
+  // create a node of type class/property to be passed as a parameter for drupal_get_form
+  // We can populate the node with additional data which can be needed later
+  $type_node->uid      = $user->uid;
+  $type_node->name     = (isset($user->name) ? $user->name : '');
+  $type_node->type     = $type;
+  $type_node->language = LANGUAGE_NONE;
+  // populating the 'related vocabulary' node information
+  $type_node->vocabulary = $vocabulary;
+  module_load_include('inc', 'node', 'node.pages');
+
+  return drupal_get_form($type . '_node_form', $type_node);
+}
+
+/**
+ * A menu wildcard loader for the %neologism_vocabulary wildcard. It loads
+ * vocabulary nodes, and causes a Not Found for any other kind of node.
+ *
+ * This function corresponds to the auto loader wildcard component
+ * of the kind %neologism_vocabulary in the /add-class and /add-property URLs
+ *
+ * @todo
+ *   Remove notice popup
+ */
+function neologism_vocabulary_load($nid) {
+  if (!$nid) {
+    return NULL;
+  }
+  $node = node_load($nid);
+  if (!$node || $node->type != 'vocabulary') {
+    return NULL;
+  }
+  return $node;
+}
+
+/**
+ * Implementation of hook_menu_link_alter().
+ *
+ * This would remove add class, add vocabulary and add property links from add content navigation menu.
+ */
+function neologism_menu_link_alter(&$item, $menu) {
+  // Hide the Class and Property content types from the Create Content menu
+  switch ($item['link_path']) {
+    case 'node/add/vocabulary':
+    case 'node/add/class':
+    case 'node/add/property':
+      $item['hidden'] = 1;
+      break;
+  }
+}
+
+/**
+ * Output a list of all the vocabulary workspaces present on the site.
+ *
+ *
+ * Custom callback that builds our content and returns it to the browser.
+ *
+ * @return
+ *   a build array
+ *
+ */
+function neologism_view_index() {
+  $build  = array();
+  $sql    = 'SELECT nid FROM {node} n WHERE n.type = :type AND n.status = :status ORDER BY n.sticky DESC, n.created DESC';
+  $result = db_query($sql,
+    array(
+      ':type' => 'workspace',
+      ':status' => 1,
+    )
+  );
+
+  foreach ($result as $row) {
+    $node = node_load($row->nid);
+    // teaser is the view mode here, we can create a specific view mode (though another function) if needed and use it here.
+    $build['node_list'][] = node_view($node, 'teaser');
+  }
+
+  return $build;
+}
+
+
+
+
+// Vocabulary Workspace .................
+
+/**
+ * function hook_form_FORM_ID_alter(&$form, &$form_state, $form_id) for Vocabulary Workspace entity
+ */
+function neologism_form_workspace_node_form_alter(&$form, &$form_state, $form_id) {
+
+  global $user;
+
+  $form['title']['#description'] = 'Name of the Vocabulary Workspace.';
+  $form['#validate'] = array();
+  $form['#validate'][] = '_neologism_form_workspace_node_form_validate_alter';
+  $form['workspace_authors']['und']['0']['uid']['#default_value'] = $user->uid;
+
+  // Hide certain fields in the Vocabulary Workspace Form from the users
+  $form['workspace_layout']['#access'] = FALSE;
+  $form['workspace_main_vocabulary']['#access'] = FALSE;
+
+  $voc_node->type = 'vocabulary';
+  $voc_node->language = LANGUAGE_NONE;
+  module_load_include('inc', 'node', 'node.pages');
+  $output = drupal_get_form('vocabulary_node_form', $voc_node);
+
+  // vocabulary Id text-field
+  $form['vocabulary_title'] = $output['vocabulary_title'];
+  $form['vocabulary_title']['und']['0']['value']['#title'] = 'Main Vocabulary ID';
+  $form['vocabulary_title']['und']['0']['value']['#description'] = 'Will be used as the namespace prefix. Only lowercase letters, numbers, dashes. Max 10 characters.';
+
+  $form['vocabulary-namespace-uri'] = $output['vocabulary_namespace_uri'];
+  $form['vocabulary_abstract'] = $output['vocabulary_abstract'];
+  $form['vocabulary-body'] = $output['vocabulary_body'];
+  $form['vocabulary-additional-rdf'] = $output['vocabulary_additional_rdf'];
+}
+
+/**
+ * Custom workspace form validation handler 'without' supressing the original handler
+ */
+function _neologism_form_workspace_node_form_validate_alter(&$form, &$form_state) {
+
+  // vocabulary id
+  $vocabulary_id = $form_state['input']['vocabulary_title']['und'][0]['value'];
+
+  //Creating URL Alias for the workspace
+  $form_state['values']['path']['alias'] = ($form_state['values']['vocabulary_namespace_uri']['und'][0]['value'] == 0 ? $vocabulary_id : substr(($form_state['input']['form-item_form-type-radio_form-item-vocabulary-namespace-uri-und_custom-textbox']), 0, -1));
+
+  $form_state['values']['vocabulary_namespace_uri']['und'][0]['value'] = ($form_state['values']['vocabulary_namespace_uri']['und'][0]['value'] == 0 ? url('<front>', array('absolute' => TRUE)) . $vocabulary_id . "#" : $form_state['input']['form-item_form-type-radio_form-item-vocabulary-namespace-uri-und_custom-textbox']);
+
+  // Code to convert the vocabulary namespace URI to a link
+  $form_state['values']['vocabulary_namespace_uri']['und'][0]['value'] = "<a href='" . $form_state['values']['vocabulary_namespace_uri']['und'][0]['value'] . "'>" . $form_state['values']['vocabulary_namespace_uri']['und'][0]['value'] . "</a>";
+
+  // set workspace id of vocabulary node as workspace title
+  // create vocabulary node
+  // set main vocabulary id of workspace as that returned of the node
+
+  // vocabulary id
+  $vocabulary_id = $form_state['input']['vocabulary_title']['und'][0]['value'];
+  // related vocabulary workspace
+  $vocabulary_workspace = $form_state['values']['title'];
+  // vocabulary title
+  $vocabulary_title = $form_state['values']['title'];
+  // vocabulary namespace URI
+  $vocabulary_namespace_uri = $form_state['values']['vocabulary_namespace_uri']['und'][0]['value'];
+  // vocabulary abstract
+  $vocabulary_abstract = $form_state['input']['vocabulary_abstract']['und'][0]['value'];
+  // vocabulary body
+  $vocabulary_body = $form_state['input']['vocabulary_body']['und'][0]['value'];
+  // vocabulary additional RDF
+  $vocabulary_additional_rdf = $form_state['input']['vocabulary_additional_rdf']['und'][0]['value'];
+
+
+  $node           = new stdClass();
+  $node->type     = 'vocabulary';
+  $node->language = LANGUAGE_NONE;
+
+  node_object_prepare($node);
+
+  $node->title = $vocabulary_id;
+
+  // Saving custom fieids : $term->field_custom_field_name[0]['value'] = 'Some value';
+
+  $node->vocabulary_namespace_uri['und'][0]['value'] = $vocabulary_namespace_uri;
+  $node->vocabulary_title['und'][0]['value'] = $vocabulary_title;
+  $node->vocabulary_abstract['und'][0]['value'] = $vocabulary_abstract;
+  $node->vocabulary_body['und'][0]['value'] = $vocabulary_body;
+  $node->vocabulary_additional_rdf['und'][0]['value'] = $vocabulary_additional_rdf;
+
+  node_save($node);
+
+  // Objects are always passed by reference in PHP5.
+  $form_state['input']['workspace_main_vocabulary']['und']['0']['nid'] = $node->nid;
+  $form_state['values']['workspace_main_vocabulary']['und']['0']['nid'] = $node->nid;
+}
+
+
+
+
+// Vocabulary ............
+
+/**
+ * function hook_form_FORM_ID_alter(&$form, &$form_state, $form_id) for Vocabulary entity
+ */
+function neologism_form_vocabulary_node_form_alter(&$form, &$form_state, $form_id) {
+
+  $form['title']['#description'] = 'Will be used as the namespace prefix. Only lowercase letters, numbers, dashes. Max 10 characters.';
+  $form['#validate'] = array();
+  $form['#validate'][] = '_neologism_form_vocabulary_node_form_validate_alter';
+}
+
+
+
+
+// Class ............
+
+/**
+ *function hook_form_FORM_ID_alter(&$form, &$form_state, $form_id) for Class entity
+ */
+function neologism_form_class_node_form_alter(&$form, &$form_state, $form_id) {
+
+  //  dd($form['#node']->vocabulary->title);
+
+  $form['title']['#field_prefix'] = url('<front>', array('absolute' => TRUE)) . '<span id= "class-related-vocabulary-id-value">vocabulary-id</span>' . '#';
+  $form['title']['#description'] = 'Class URI should include only letters, numbers, dashes, and underscores, and should start with an uppercase letter and use CamelCase capitalization.';
+
+  $form['#validate'] = array();
+  $form['#validate'][] = '_neologism_form_class_node_form_validate_alter';
+
+  // set the display of the 'related vocabulary' field to hidden
+  $form['class_related_vocabulary']['#access'] = FALSE;
+  //  $form['class_related_vocabulary']['und']['0']['nid']['#default_value'] = $form['#node']->vocabulary->title;
+}
+
+/**
+ * Custom class form validation handler 'without' supressing the original handler
+ */
+function _neologism_form_class_node_form_validate_alter(&$form, &$form_state) {
+
+  // fill the value of the hidden 'related vocabulary' field automatically
+  $form_state['input']['class_related_vocabulary']['und']['0']['nid'] = $form['#node']->vocabulary->nid;
+  $form_state['values']['class_related_vocabulary']['und']['0']['nid'] = $form['#node']->vocabulary->nid;
+}
+
+
+
+
+// Property ........
+
+/**
+ *function hook_form_FORM_ID_alter(&$form, &$form_state, $form_id) for Property entity
+ */
+function neologism_form_property_node_form_alter(&$form, &$form_state, $form_id) {
+
+  $form['title']['#field_prefix'] = url('<front>', array('absolute' => TRUE)) . '<span id= "property-related-vocabulary-id-value">vocabulary-id</span>' . '#';;
+  $form['title']['#description'] = 'Property URI should include only letters, numbers, dashes, and underscores, and should start with a lowercase letter and use CamelCase capitalization.';
+
+  $form['#validate'] = array();
+  $form['#validate'][] = '_neologism_form_property_node_form_validate_alter';
+}
+
+/**
+ * Custom property form validation handler 'without' supressing the original handler
+ **/
+function _neologism_form_property_node_form_validate_alter(&$form, &$form_state) {
+
+  //Creating URL Alias
+  $related_vocabulary_id = $form_state['values']['property_related_vocabulary']['und']['0']['nid'];
+
+  $query = "SELECT {node}.title FROM {node} WHERE {node}.type = 'vocabulary' AND {node}.nid =" . $related_vocabulary_id . ";";
+  $table_attribute_value_array = db_query($query)->fetchCol();
+  $related_vocabulary = $table_attribute_value_array[0];
+}
+
