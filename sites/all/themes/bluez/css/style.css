@@ -834,8 +834,33 @@ body.sidebar-first #post-content {
   font-weight: bold;
   margin-bottom: 10px;
   padding-bottom: 10px;
+  font-size: 17px;
+}
+/*-------------------------------------------*
+/*left-sidebar
+/*-------------------------------------------*/
+
+#left_sidebar {
+	float: right;
+	width: 250;
+	padding: 25px;
 }
 
+
+#left_sidebar .block {
+  margin-bottom: 30px;
+  background-color: white;
+  border: 2px black;
+}
+
+#left_sidebar .block h2 {
+  border-bottom: 1px solid #eee;
+  color: #666;
+  font-weight: bold;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  font-size: 17px;
+}
 /*-------------------------------------------*
 /*Copyright
 /*-------------------------------------------*/
@@ -1302,4 +1327,13 @@ h3.comment-title a {
 
 .col-content {
   font-size: 12px;
+}
+
+
+/*-------------------------------------------*
+/* Overlay
+/*-------------------------------------------*/
+
+.edit {
+	float:right;
 }
