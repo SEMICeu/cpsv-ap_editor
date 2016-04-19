@@ -329,6 +329,7 @@ h4 a {
   position: relative;
   margin: 0 auto;
   width: 960px;
+  z-index: 1;
   padding-bottom: 20px;
 }
 
@@ -340,7 +341,7 @@ h4 a {
   background: url("../images/shadow-bottom.png") no-repeat bottom center;
   height: 49px;
   position: absolute;
-  z-index: 999;
+  z-index: 1;
   width: 1100px;
 }
 
