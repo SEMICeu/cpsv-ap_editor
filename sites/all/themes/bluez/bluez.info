@@ -18,6 +18,7 @@ regions[sidebar_first]  = Right Sidebar
 regions[help]           = Help
 regions[bottom]         = Bottom
 regions[footer]         = Footer
+regions[sidebar_left] 	= Left sidebar
 
 ; FEATURES
 ;----------------------------------------------------

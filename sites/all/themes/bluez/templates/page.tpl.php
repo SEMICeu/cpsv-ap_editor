@@ -68,17 +68,17 @@
 
 
 <div id="wrapper">
+
   <!-- socialbar Starts -->
-  <?php if ($display): ?>
-    <div id="socialbar">
-      <ul class="social">
-        <?php $options['attributes'] = array('target' => '_blank'); ?>
-        <?php if ($facebook): ?><li class="fb"><?php print l(t('facebook'), $facebook, $options); ?></li> <?php endif; ?>
-        <?php if ($twitter): ?><li class="tw"><?php print l(t('twitter'), $twitter, $options); ?></li> <?php endif; ?>
-        <?php if ($linkedin): ?><li class="ln"><?php print l(t('linkedin'), $linkedin, $options); ?></li> <?php endif; ?>
-      </ul>
-    </div>
-  <?php endif; ?>
+  <div id="left_sidebar" class= "clearfix">
+  <?php if ($page['sidebar_left']): ?>
+  <div class="sidebar_left">
+    <?php print render($page['sidebar_left']); ?>
+	<?php if ($action_links): ?><?php print render($action_links); ?><?php endif; ?>
+  </div> <!-- /.footer icons -->
+<?php endif; ?>
+</div>
+
   <!-- socialbar Ends -->
     
   <!-- Header Starts -->
@@ -109,6 +109,9 @@
         <?php print drupal_render($main_menu_tree); ?>
       </div>
     </div>
+	
+	  
+
     <!-- navigation Ends -->
   </div>
   <!-- Header Ends -->
@@ -146,7 +149,11 @@
       </div>  <!-- /#sidebar-first -->
     <?php endif; ?>
   </div>
+
+
   <div class="clear"></div>
+  
+  
   
   <!--Footer context Start -->
   <div id="footer-context">
@@ -173,3 +180,6 @@
   <!--Footer context Ends -->
   <div class="clear"></div>
 </div>
+
+
+
