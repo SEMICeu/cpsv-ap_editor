@@ -12,19 +12,15 @@ function export_menu() {
 	return $items;
 }
 
-
 function export_basic($form, &$form_state){
 	
-$form = array();
+	$form = array();
 
 	$form['datamodel1'] = array (
 					'#title' => t('Export'),
 					'#type' => 'submit',
-					'#value' => 'Export Public Service Descriptions',
-					
+					'#value' => 'Export Public Service Descriptions',					
 				);
-	
-
 			
 	return $form;	
 	}
@@ -33,45 +29,25 @@ function export_basic_submit($form, &$form_state) {
 	
 	if(easyRdf()) {
 		
-		$endpoint= 'http://localhost:8890/sparql';
+		//Change this variable to point to the correct sparql endpoint
+		$endpoint= 'SparqlEndpoint';
 		$gs= new EasyRdf_Sparql_client($endpoint);
-		
-	
+
+		//Change in the WHERE clausule the *GRAPHURI* to the correct Graph URI that you have chosen
 		$data = $gs->query(
-		'CONSTRUCT {?s ?o ?p}
- 			
- 			WHERE { GRAPH <http://localhost/cpsv-ap_editor> {?s ?o ?p}}
- 			
+		'CONSTRUCT {?s ?o ?p}		
+ 			WHERE { GRAPH <*GRAPHURI*> {?s ?o ?p}} 			
  		');
 	
-	$dir = getcwd();
-	
-	drupal_set_message($data->dump());
- 	
-
- 	$serialized= $data->serialise('rdfxml');
-
- 	$array= $data->resources();
- 	
- 	$exportfile= $dir."/sites/export.rdf";
- 	$fh = fopen($exportfile, "w");
- 	fwrite($fh, $serialized);
- 	fclose($fh);
+ 		$dir = getcwd();
+		$serialized= $data->serialise('rdfxml');
+		$array= $data->resources();
+		//Change this variable to export to another directory
+ 	 	$exportfile= $dir."/sites/export.rdf";
+ 	 	$fh = fopen($exportfile, "w");
+ 	 	fwrite($fh, $serialized);
+ 	 	fclose($fh);
  	}
-	/*
-	$dir = getcwd();
-	
- 	$exportfile= $dir."/sites/export";
- 	$fh = fopen($exportfile, "w");
- 	fwrite($fh, $data);
- 	
-	
-	system("c:\WINDOWS\system32\cmd.exe /c START ".$dir."\sites\Converter.bat");
-   drupal_set_message("run");
-			
-	fwrite($tempfile,$data);
-	$*/
-	
 }
 
 
