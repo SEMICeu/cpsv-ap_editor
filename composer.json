@@ -1,0 +1,10 @@
+{
+    "require": {
+        "monolog/monolog": "1.0.*",
+		"easyrdf/easyrdf": "*",
+		"ml/json-ld": "~1.0"
+    }
+	
+	
+	
+}

@@ -1,0 +1,98 @@
+<?php
+/**
+ * @file
+ * Provides the EasyRDF PHP library.
+ *
+ * @copyright Copyright(c) 2012 Previous Next Pty Ltd
+ * @license GPL v2 http://www.fsf.org/licensing/licenses/gpl.html
+ * @author Chris Skene chris at previousnext dot com dot au
+ */
+
+/**
+ * Invokes EasyRdf.
+ */
+function easyrdf() {
+  $library = libraries_load('easyrdf');
+
+  // Try to load the library and check if that worked.
+  if (($library) && !empty($library['loaded'])) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implements hook_libraries_info().
+ */
+function easyrdf_libraries_info() {
+
+  // This array key lets Libraries API search for 'sites/all/libraries/example'
+  // directory, which should contain the entire, original extracted library.
+  $libraries['easyrdf'] = array(
+    // Only used in administrative UI of Libraries API.
+    'name' => 'EasyRdf',
+    'vendor url' => 'http://www.aelius.com/njh/easyrdf/',
+    'download url' => 'https://github.com/njh/easyrdf/downloads',
+    // Optional: If, after extraction, the actual library files are contained in
+    // 'sites/all/libraries/example/lib', specify the relative path here.
+    'path' => 'lib',
+    // Specify arguments for the version callback. By default,
+    // libraries_get_version() takes a named argument array:
+    'version arguments' => array(
+      'file' => 'CHANGELOG.md',
+      'pattern' => '@EasyRdf\s+([0-9a-zA-Z\.-]+)@',
+      'lines' => 5,
+      'cols' => 20,
+    ),
+    // Default list of files of the library to load. Important: Only specify
+    // third-party files belonging to the library here, not integration files of
+    // your module.
+    'files' => array(
+      // For PHP libraries, specify include files here, still relative to the
+      // library path.
+      'php' => array(
+        'EasyRdf.php',
+      ),
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Implements hook_help().
+ */
+function easyrdf_help($path, $arg) {
+  $output = '';
+
+  switch ($path) {
+    case 'admin/help#easyrdf':
+      if (easyrdf()) {
+        // Display the introduction paragraph.
+        $output .= '<p>' . t('<a href="@easyrdf">EasyRdf</a> is a PHP library designed to make it easy to consume and produce RDF.', array(
+          '@easyrdf' => 'http://www.aelius.com/njh/easyrdf/',
+        )) . '</p>';
+
+        // Test out using the module if we're actually on the help page.
+        if ($_GET['q'] == 'admin/help/easyrdf') {
+          $output .= '<h3>' . t('Test') . '</h3>';
+          $output .= '<p>Test request to http://www.bbc.co.uk/music/artists/70248960-cb53-4ea4-943a-edb18f7d336f.rdf</p>';
+
+          $graph = new EasyRdf_Graph("http://www.bbc.co.uk/music/artists/70248960-cb53-4ea4-943a-edb18f7d336f.rdf");
+          $graph->load();
+          $artist = $graph->primaryTopic();
+
+          $output .= $artist->dump();
+
+        }
+      }
+      else {
+        $output = 'EasyRdf could not be loaded. Check that you have installed it properly.';
+      }
+
+      break;
+  }
+
+  return $output;
+}

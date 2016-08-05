@@ -1,0 +1,5 @@
+name= export
+description= export editor
+core= 7.x
+package= Custom
+stylesheets[all][] = export.css

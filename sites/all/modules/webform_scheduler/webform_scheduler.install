@@ -1,0 +1,152 @@
+<?php
+
+/**
+ * @file
+ * Webform Scheduler module install/schema hooks.
+ *
+ * @author Daniel Imhoff
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function webform_scheduler_schema() {
+  $schema = array();
+
+  $schema['webform_scheduler'] = array(
+    'description' => 'Table for storing the information for scheduling webforms.',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'The node identifier of a webform.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'begin_date' => array(
+        'description' => 'Timestamp of when the webform is scheduled to begin.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'end_date' => array(
+        'description' => 'Timestamp of when the webform is scheduled to end.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'restriction_method' => array(
+        'description' => 'Method for restricting user access to closed webforms.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'unsigned' => TRUE,
+        'default' => 1,
+        'not null' => TRUE,
+      ),
+      'msg_before' => array(
+        'description' => 'Message to display before the webform is scheduled to begin.',
+        'type' => 'varchar',
+        'length' => 128,
+      ),
+      'msg_after' => array(
+        'description' => 'Message to display after the webform is scheduled to end.',
+        'type' => 'varchar',
+        'length' => 128,
+      ),
+    ),
+    'primary key' => array('nid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function webform_scheduler_install() {
+  db_update('system')
+    ->condition('name', 'webform_scheduler')
+    ->condition('type', 'module')
+    ->fields(array('weight' => -2))
+    ->execute();
+}
+
+/**
+ * Add a column for showing (and disabling) or hiding the webform.
+ */
+function webform_scheduler_update_7001() {
+  if (!db_field_exists('webform_scheduler', 'show_or_hide')) {
+    db_add_field('webform_scheduler', 'show_or_hide', array(
+      'description' => 'Show (and disable) or hide the webform.',
+      'type' => 'int',
+      'size' => 'tiny',
+      'unsigned' => TRUE,
+      'default' => 0,
+      'not null' => TRUE,
+    ));
+  }
+}
+
+/**
+ * Rename show_or_hide field for more flexibility.
+ */
+function webform_scheduler_update_7002() {
+  db_change_field('webform_scheduler', 'show_or_hide', 'restriction_method', array(
+    'description' => 'Method for restricting user access to closed webforms.',
+    'type' => 'int',
+    'size' => 'tiny',
+    'unsigned' => TRUE,
+    'default' => 1,
+    'not null' => TRUE,
+  ));
+
+  db_update('webform_scheduler')
+    ->expression('restriction_method', 'restriction_method + :incr', array(':incr' => 1))
+    ->execute();
+}
+
+/**
+ * Module installation error when on PostgreSQL due to use of reserved keyword.
+ */
+function webform_scheduler_update_7003() {
+  db_change_field('webform_scheduler', 'begin', 'begin_date',
+    array(
+      'description' => 'Timestamp of when the webform is scheduled to begin.',
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => 0,
+     )
+  );
+
+  db_change_field('webform_scheduler', 'end', 'end_date',
+    array(
+      'description' => 'Timestamp of when the webform is scheduled to end.',
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => 0,
+    )
+  );
+}
+
+/**
+ * Add column for custom message.
+ */
+function webform_scheduler_update_7004() {
+  if (!db_field_exists('webform_scheduler', 'msg_before')) {
+    db_add_field('webform_scheduler', 'msg_before', array(
+      'description' => 'Message to display before the webform is scheduled to begin.',
+      'type' => 'varchar',
+      'length' => '128',
+      'not null' => false,
+	 'default' => null,
+    ));
+  }
+  if (!db_field_exists('webform_scheduler', 'msg_after')) {
+    db_add_field('webform_scheduler', 'msg_after', array(
+      'description' => 'Message to display after the webform is scheduled to end.',
+      'type' => 'varchar',
+      'length' => '128',
+      'not null' => false,
+	 'default' => null,
+    ));
+  }
+}

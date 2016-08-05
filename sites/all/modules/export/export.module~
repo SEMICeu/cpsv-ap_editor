@@ -1,0 +1,78 @@
+<?php
+require 'vendor/autoload.php';
+
+function export_menu() {
+
+	$items['export'] = array(
+		'title' => 'export descriptions',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('export_basic'),
+		'access callback' => TRUE,
+	);
+	return $items;
+}
+
+
+function export_basic($form, &$form_state){
+	
+$form = array();
+
+	$form['datamodel1'] = array (
+					'#title' => t('Export'),
+					'#type' => 'submit',
+					'#value' => 'Export Public Service Descriptions',
+					
+				);
+	
+
+			
+	return $form;	
+	}
+	
+function export_basic_submit($form, &$form_state) {
+	
+	if(easyRdf()) {
+		
+		$endpoint= 'http://localhost:8890/sparql';
+		$gs= new EasyRdf_Sparql_client($endpoint);
+		
+	
+		$data = $gs->query(
+		'CONSTRUCT {?s ?o ?p}
+ 			
+ 			WHERE { GRAPH <http://localhost/cpsv-ap_editor> {?s ?o ?p}}
+ 			
+ 		');
+	
+	$dir = getcwd();
+	
+	drupal_set_message($data->dump());
+ 	
+
+ 	$serialized= $data->serialise('rdfxml');
+
+ 	$array= $data->resources();
+ 	
+ 	$exportfile= $dir."/sites/export.rdf";
+ 	$fh = fopen($exportfile, "w");
+ 	fwrite($fh, $serialized);
+ 	fclose($fh);
+ 	}
+	/*
+	$dir = getcwd();
+	
+ 	$exportfile= $dir."/sites/export";
+ 	$fh = fopen($exportfile, "w");
+ 	fwrite($fh, $data);
+ 	
+	
+	system("c:\WINDOWS\system32\cmd.exe /c START ".$dir."\sites\Converter.bat");
+   drupal_set_message("run");
+			
+	fwrite($tempfile,$data);
+	$*/
+	
+}
+
+
+		  

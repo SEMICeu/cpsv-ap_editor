@@ -1,0 +1,18 @@
+#edit-scheduler .container-inline-date,
+#edit-scheduler .fieldset-wrapper > .form-type-textfield {
+  float: left;
+}
+
+#edit-scheduler .container-inline-date {
+  clear: none;
+  padding-top: 1em;
+}
+
+#edit-scheduler .fieldset-wrapper > .form-type-textfield {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+#edit-scheduler .form-item-scheduler-restriction-method {
+  clear: both;
+}
