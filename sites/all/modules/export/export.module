@@ -26,28 +26,69 @@ function export_basic($form, &$form_state){
 	}
 	
 function export_basic_submit($form, &$form_state) {
-	
+	/*                    
 	if(easyRdf()) {
 		
 		//Change this variable to point to the correct sparql endpoint
-		$endpoint= 'SparqlEndpoint';
+		$endpoint= 'http://localhost:8890/sparql';
 		$gs= new EasyRdf_Sparql_client($endpoint);
 
 		//Change in the WHERE clausule the *GRAPHURI* to the correct Graph URI that you have chosen
-		$data = $gs->query(
-		'CONSTRUCT {?s ?o ?p}		
- 			WHERE { GRAPH <*GRAPHURI*> {?s ?o ?p}} 			
- 		');
 	
+	
+ 		
+ 		/*$number = $gs->listNamedGraphs();
+ 		
+ 		foreach($number as $item) {
+ 			drupal_set_message($item->localName());
+ 		}*/
+ /*		$data = $gs->query(
+ 		'CONSTRUCT {?s ?o ?p}
+ 		WHERE {GRAPH <http://localhost/cpsv-ap_editor> {?s ?o ?p}} 		 	
+ 		 	');                        
+ 		
+ 		
  		$dir = getcwd();
-		$serialized= $data->serialise('rdfxml');
-		$array= $data->resources();
+ 		$serialized= $data->serialise('rdfxml');
+		
 		//Change this variable to export to another directory
- 	 	$exportfile= $dir."/sites/export.rdf";
+ 	 	$exportfile= $dir."/sites/rdfExport.rdf";
  	 	$fh = fopen($exportfile, "w");
  	 	fwrite($fh, $serialized);
  	 	fclose($fh);
- 	}
+ 	 	
+ 	 	drupal_set_message("data successfully exported");
+ 	}*/
+ 	
+ 		$query = "CONSTRUCT {?s ?o ?p}
+ 		WHERE {GRAPH <http://drupal.cpsv-ap.eu> {?s ?o ?p}}";
+ 		
+ 		$searchUrl = 'http://52.50.205.146/sparql?'.'query='.urlencode($query).'&format=rdf';
+ 		
+ 		if(!function_exists('curl_init')){
+ 			die('CURL is not installed');
+ 		}
+ 		
+ 		drupal_set_message($searchUrl);
+ 		
+ 		$ch = curl_init();
+ 		curl_setopt($ch,CURLOPT_URL,$searchUrl);
+ 		curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
+ 		$response=curl_exec($ch);
+ 		curl_close($ch);
+ 		
+ 		 	drupal_set_message("worked? ".$response);
+ 	
+ 		$dir = getcwd();
+ 		
+		
+		//Change this variable to export to another directory
+ 	 	$exportfile= $dir."/sites/rdfExport.rdf";
+ 	 	$fh = fopen($exportfile, "w");
+ 	 	fwrite($fh, $response);
+ 	 	fclose($fh);
+ 		
+ 	
 }
 
 
