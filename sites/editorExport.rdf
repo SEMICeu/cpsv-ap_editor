@@ -1,0 +1,554 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<rdf:RDF
+	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+	xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+	xmlns:foaf="http://xmlns.com/foaf/0.1/"
+	xmlns:dcterms="http://purl.org/dc/terms/"
+	xmlns:ns4="http://data.europa.eu/eli/ontology#"
+	xmlns:ns5="http://data.europa.eu/cv/"
+	xmlns:ns6="http://www.w3.org/ns/locn/"
+	xmlns:ns7="http://www.w3.org/TR/vocab-adms/#"
+	xmlns:sioc="http://rdfs.org/sioc/ns#"
+	xmlns:ns9="http://www.w3.org/ns/dcat#" >
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/content/pushtest">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <rdf:type rdf:resource="http://data.europa.eu/cv/PublicService" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-09-13T11:36:57+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-09-13T11:36:57+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Pushtest</dcterms:title>
+    <dcterms:description rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Pushtest</dcterms:description>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-09-13T11:36:57+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Pushtest</dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+    <ns5:ProcessingTime rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns5:ProcessingTime>
+    <ns5:sector rdf:datatype="http://www.w3.org/2004/02/skos/core#Concept"></ns5:sector>
+    <ns5:hasCompetentAuthority rdf:resource="http://localhost/cpsv-ap_editor/content/trademarkoffice" />
+  </rdf:Description>
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/content/trademarkoffice">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <rdf:type rdf:resource="http://data.europa.eu/cv/PublicOrganisation" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T11:31:22+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T10:21:17+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Trademark office</dcterms:title>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T11:31:22+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Trademark_office</dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/node/57">
+    <rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Cost" />
+    <rdf:type rdf:resource="http://rdfs.org/sioc/ns#Item" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-03-31T12:02:19+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-03-31T12:02:19+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">start business cost</dcterms:title>
+    <dcterms:description rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></dcterms:description>
+    <ns5:currency rdf:datatype="http://www.w3.org/2004/02/skos/core#Concept"></ns5:currency>
+    <ns5:monetary_value rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0</ns5:monetary_value>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-03-31T12:02:19+02:00</dcterms:date>
+    <dcterms:identifier></dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/node/70">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <rdf:type rdf:resource="http://data.europa.eu/cv/PublicService" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-04-06T18:10:14+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-04-22T17:22:22+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></dcterms:title>
+    <dcterms:description rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">VAT refund belgium</dcterms:description>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-04-06T18:10:14+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">VAT refund in Belgium</dcterms:identifier>
+    <dcterms:hasInput rdf:resource="http://localhost/cpsv-ap_editor/node/69" />
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+    <ns9:keyword rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Refund</ns9:keyword>
+    <ns9:keyword rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">VAT</ns9:keyword>
+    <ns5:ProcessingTime rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">2</ns5:ProcessingTime>
+    <ns5:sector rdf:datatype="http://www.w3.org/2004/02/skos/core#Concept"></ns5:sector>
+    <ns5:hasCompetentAuthority rdf:resource="http://localhost/cpsv-ap_editor/node/77" />
+  </rdf:Description>
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/node/80">
+    <rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Agent" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-04-29T10:42:14+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T11:20:42+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Spanish patent and trademark office</dcterms:title>
+    <foaf:homepage rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></foaf:homepage>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-04-29T10:42:14+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Spanishpatentandtrademarkoffice</dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/node/81">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <rdf:type rdf:resource="http://data.europa.eu/cv/PublicService" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-04-29T10:42:36+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T11:31:34+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></dcterms:title>
+    <dcterms:description rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">You can apply for a national patent at a patent office in an EU country or for a European patent through the European Patent Office. However, a European patent needs to be validated by the national patent office in each country where protection is required. Depending on the country&#39;s law, you may have to provide translations or pay fees by a certain date.</dcterms:description>
+    <dcterms:language>es</dcterms:language>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-04-29T10:42:36+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Validate a European patent when applying for a Spanish patent</dcterms:identifier>
+    <dcterms:hasInput rdf:resource="http://localhost/cpsv-ap_editor/node/75" />
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+    <ns5:ProcessingTime rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns5:ProcessingTime>
+    <ns5:sector rdf:datatype="http://www.w3.org/2004/02/skos/core#Concept"></ns5:sector>
+    <ns5:hasCompetentAuthority rdf:resource="http://localhost/cpsv-ap_editor/content/trademarkoffice" />
+  </rdf:Description>
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/content/testevent">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <rdf:type rdf:resource="http://data.europa.eu/cv/BusinessEvent" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:12:14+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:12:14+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">testevent</dcterms:title>
+    <dcterms:description rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></dcterms:description>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:12:14+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">testevent</dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+    <ns5:processingTime></ns5:processingTime>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/content/brusseloffice">
+    <rdf:type rdf:resource="http://www.w3.org/ns/locn/Address" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:27:30+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:27:30+02:00</dcterms:modified>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:27:30+02:00</dcterms:date>
+    <ns6:addressArea rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Brussel</ns6:addressArea>
+    <ns6:adminUnitL1></ns6:adminUnitL1>
+    <ns6:adminUnitL2></ns6:adminUnitL2>
+    <ns6:locatorDesignator></ns6:locatorDesignator>
+    <ns6:locatorname></ns6:locatorname>
+    <ns6:poBox rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns6:poBox>
+    <ns6:postCode rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns6:postCode>
+    <ns6:postCode rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">1000</ns6:postCode>
+    <ns6:thoroughfare rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns6:thoroughfare>
+    <ns6:fullAddress rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Centre of Brussels</ns6:fullAddress>
+    <ns6:addressId rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Brussel_office</ns6:addressId>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/content/brussel">
+    <rdf:type rdf:resource="http://purl.org/dc/terms/Location" />
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:28:05+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:28:05+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Brussel</dcterms:title>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:28:05+02:00</dcterms:date>
+    <ns6:address rdf:resource="http://localhost/cpsv-ap_editor/content/brusseloffice" />
+    <ns6:GeographicName rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Brussel</ns6:GeographicName>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/content/pwc">
+    <rdf:type rdf:resource="http://www.w3.org/ns/org#FormalOrganization" />
+    <rdf:type rdf:resource="rdfs:subClassOffoaf:Organization" />
+    <foaf:name rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">PwC</foaf:name>
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:30:13+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T10:59:57+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">PwC</dcterms:title>
+    <foaf:homepage>http://www.pwc.be</foaf:homepage>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:30:13+02:00</dcterms:date>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+    <ns5:AdministrativeLevel rdf:datatype="http://www.w3.org/2004/02/skos/core#Concept">test</ns5:AdministrativeLevel>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/content/brussel-office">
+    <rdf:type rdf:resource="http://data.europa.eu/cv/Channel" />
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:30:42+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T10:55:33+02:00</dcterms:modified>
+    <ns5:ownedBy rdf:resource="http://localhost/cpsv-ap_editor/content/pwc" />
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:30:42+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Brussel Office</dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/content/christopheframework">
+    <rdf:type rdf:resource="rdfs:Classcv:FormalFramework" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:32:31+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:32:31+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">framework of christophe</dcterms:title>
+    <dcterms:creator rdf:resource="http://localhost/cpsv-ap_editor/content/trademarkoffice" />
+    <dcterms:description rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">this is the framework of christophe </dcterms:description>
+    <dcterms:language>en</dcterms:language>
+    <ns4:id_local rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns4:id_local>
+    <ns4:is_about rdf:datatype="http://www.w3.org/2004/02/skos/core#Concept">test</ns4:is_about>
+    <ns4:relevant_for rdf:datatype="http://www.w3.org/2004/02/skos/core#Concept">test</ns4:relevant_for>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:32:31+02:00</dcterms:date>
+    <ns7:adms-status></ns7:adms-status>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">christophe_framework</dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/content/christopherule">
+    <rdf:type rdf:resource="http://data.europa.eu/cv/Rule" />
+    <rdf:type rdf:resource="http://rdfs.org/sioc/ns#Item" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:32:44+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:32:44+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">The rule of christophe</dcterms:title>
+    <dcterms:description rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">The rule of christophe</dcterms:description>
+    <ns5:implements rdf:resource="http://localhost/cpsv-ap_editor/content/christopheframework" />
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:32:44+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Christophe_Rule</dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+    <dcterms:Language>nl</dcterms:Language>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/content/outputofchristophe">
+    <rdf:type rdf:resource="http://data.europa.eu/cv/Output" />
+    <rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Document" />
+    <rdf:type rdf:resource="http://rdfs.org/sioc/ns#Item" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:33:30+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:33:30+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">christophe&#39;s output</dcterms:title>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:33:30+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Output_of_christophe</dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/content/publicserviceofchristophe">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <rdf:type rdf:resource="http://data.europa.eu/cv/PublicService" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:33:44+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:45:48+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Public Service of Christophe</dcterms:title>
+    <dcterms:description rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">This is a test public service for Christophe </dcterms:description>
+    <dcterms:requires rdf:resource="http://localhost/cpsv-ap_editor/node/70" />
+    <dcterms:spatial rdf:resource="http://localhost/cpsv-ap_editor/content/brussel" />
+    <dcterms:language>nl</dcterms:language>
+    <dcterms:relation rdf:resource="http://localhost/cpsv-ap_editor/node/81" />
+    <ns5:PublicOrganisation rdf:resource="http://localhost/cpsv-ap_editor/content/trademarkoffice" />
+    <ns5:physicallyAvailableAt rdf:resource="http://localhost/cpsv-ap_editor/content/brussel-office" />
+    <ns5:hasChannel rdf:resource="http://localhost/cpsv-ap_editor/content/brussel-office" />
+    <ns5:follows rdf:resource="http://localhost/cpsv-ap_editor/content/christopherule" />
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:33:44+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">publicservice_of_christophe</dcterms:identifier>
+    <dcterms:hasInput rdf:resource="http://localhost/cpsv-ap_editor/node/75" />
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+    <ns9:keyword rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">public service</ns9:keyword>
+    <ns9:keyword rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">christophe</ns9:keyword>
+    <ns5:ProcessingTime rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">2</ns5:ProcessingTime>
+    <ns5:sector rdf:datatype="http://www.w3.org/2004/02/skos/core#Concept"></ns5:sector>
+    <ns5:hasCost rdf:resource="http://localhost/cpsv-ap_editor/node/57" />
+    <dcterms:IsGroupedBy rdf:resource="http://localhost/cpsv-ap_editor/content/testevent" />
+    <ns5:hasCompetentAuthority rdf:resource="http://localhost/cpsv-ap_editor/content/trademarkoffice" />
+    <ns5:produces rdf:resource="http://localhost/cpsv-ap_editor/content/outputofchristophe" />
+  </rdf:Description>
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/content/test">
+    <rdf:type rdf:resource="http://purl.org/dc/terms/Location" />
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T11:50:44+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T11:50:44+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">test</dcterms:title>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T11:50:44+02:00</dcterms:date>
+    <ns6:address rdf:resource="http://localhost/cpsv-ap_editor/content/brusseloffice" />
+    <ns6:GeographicName rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">test</ns6:GeographicName>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/content/testadress">
+    <rdf:type rdf:resource="http://www.w3.org/ns/locn/Address" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T11:52:18+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T11:52:18+02:00</dcterms:modified>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T11:52:18+02:00</dcterms:date>
+    <ns6:addressArea rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns6:addressArea>
+    <ns6:adminUnitL1></ns6:adminUnitL1>
+    <ns6:adminUnitL2></ns6:adminUnitL2>
+    <ns6:locatorDesignator></ns6:locatorDesignator>
+    <ns6:locatorname></ns6:locatorname>
+    <ns6:poBox rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns6:poBox>
+    <ns6:postCode rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns6:postCode>
+    <ns6:thoroughfare rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns6:thoroughfare>
+    <ns6:fullAddress rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns6:fullAddress>
+    <ns6:addressId rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">test_adress</ns6:addressId>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/content/test-location">
+    <rdf:type rdf:resource="http://purl.org/dc/terms/Location" />
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T11:58:05+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T11:58:05+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">test location</dcterms:title>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T11:58:05+02:00</dcterms:date>
+    <ns6:address rdf:resource="http://localhost/cpsv-ap_editor/content/testadress" />
+    <ns6:GeographicName rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Geographic test location</ns6:GeographicName>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://localhost/cpsv-ap_editor/content/testinput">
+    <rdf:type rdf:resource="http://data.europa.eu/cv/Input" />
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T12:17:43+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T12:17:43+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">testinput</dcterms:title>
+    <dcterms:description rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></dcterms:description>
+    <foaf:page></foaf:page>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T12:17:43+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">test_input</dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/node/81">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <rdf:type rdf:resource="http://data.europa.eu/cv/PublicService" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-04-29T10:42:36+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T11:31:34+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></dcterms:title>
+    <dcterms:description rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">You can apply for a national patent at a patent office in an EU country or for a European patent through the European Patent Office. However, a European patent needs to be validated by the national patent office in each country where protection is required. Depending on the country&#39;s law, you may have to provide translations or pay fees by a certain date.</dcterms:description>
+    <dcterms:language>es</dcterms:language>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-04-29T10:42:36+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Validate a European patent when applying for a Spanish patent</dcterms:identifier>
+    <dcterms:hasInput rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/node/75" />
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+    <ns5:ProcessingTime rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns5:ProcessingTime>
+    <ns5:sector rdf:datatype="http://www.w3.org/2004/02/skos/core#Concept"></ns5:sector>
+    <ns5:hasCompetentAuthority rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/trademarkoffice" />
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/content/test">
+    <rdf:type rdf:resource="http://purl.org/dc/terms/Location" />
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T11:50:44+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T11:50:44+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">test</dcterms:title>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T11:50:44+02:00</dcterms:date>
+    <ns6:address rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/brusseloffice" />
+    <ns6:GeographicName rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">test</ns6:GeographicName>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/content/pwc">
+    <rdf:type rdf:resource="rdfs:subClassOffoaf:Organization" />
+    <rdf:type rdf:resource="http://www.w3.org/ns/org#FormalOrganization" />
+    <foaf:name rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">PwC</foaf:name>
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:30:13+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T10:59:57+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">PwC</dcterms:title>
+    <foaf:homepage>http://www.pwc.be</foaf:homepage>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:30:13+02:00</dcterms:date>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+    <ns5:AdministrativeLevel rdf:datatype="http://www.w3.org/2004/02/skos/core#Concept">test</ns5:AdministrativeLevel>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/content/test-1">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <rdf:type rdf:resource="http://data.europa.eu/cv/PublicService" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-09-07T10:41:38+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-09-07T10:41:38+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">test</dcterms:title>
+    <dcterms:description rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">test sparql endpoint POST</dcterms:description>
+    <dcterms:language>BG</dcterms:language>
+    <ns5:hasFormalFramework rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/christopheframework" />
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-09-07T10:41:38+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">test</dcterms:identifier>
+    <dcterms:hasInput rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/testinput" />
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+    <ns9:keyword rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">test</ns9:keyword>
+    <ns5:ProcessingTime rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">4</ns5:ProcessingTime>
+    <ns5:sector rdf:datatype="http://www.w3.org/2004/02/skos/core#Concept"></ns5:sector>
+    <ns5:hasCompetentAuthority rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/trademarkoffice" />
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/content/testinput">
+    <rdf:type rdf:resource="http://data.europa.eu/cv/Input" />
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T12:17:43+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T12:17:43+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">testinput</dcterms:title>
+    <dcterms:description rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></dcterms:description>
+    <foaf:page></foaf:page>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T12:17:43+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">test_input</dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/content/christopheframework">
+    <rdf:type rdf:resource="rdfs:Classcv:FormalFramework" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:32:31+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:32:31+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">framework of christophe</dcterms:title>
+    <dcterms:creator rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/trademarkoffice" />
+    <dcterms:description rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">this is the framework of christophe </dcterms:description>
+    <dcterms:language>en</dcterms:language>
+    <ns4:id_local rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns4:id_local>
+    <ns4:is_about rdf:datatype="http://www.w3.org/2004/02/skos/core#Concept">test</ns4:is_about>
+    <ns4:relevant_for rdf:datatype="http://www.w3.org/2004/02/skos/core#Concept">test</ns4:relevant_for>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:32:31+02:00</dcterms:date>
+    <ns7:adms-status></ns7:adms-status>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">christophe_framework</dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/content/trademarkoffice">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <rdf:type rdf:resource="http://data.europa.eu/cv/PublicOrganisation" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T11:31:22+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T10:21:17+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Trademark office</dcterms:title>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T11:31:22+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Trademark_office</dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/content/testevent">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <rdf:type rdf:resource="http://data.europa.eu/cv/BusinessEvent" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:12:14+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:12:14+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">testevent</dcterms:title>
+    <dcterms:description rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></dcterms:description>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:12:14+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">testevent</dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+    <ns5:processingTime></ns5:processingTime>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/content/brusseloffice">
+    <rdf:type rdf:resource="http://www.w3.org/ns/locn/Address" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:27:30+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:27:30+02:00</dcterms:modified>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:27:30+02:00</dcterms:date>
+    <ns6:addressArea rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Brussel</ns6:addressArea>
+    <ns6:adminUnitL1></ns6:adminUnitL1>
+    <ns6:adminUnitL2></ns6:adminUnitL2>
+    <ns6:locatorDesignator></ns6:locatorDesignator>
+    <ns6:locatorname></ns6:locatorname>
+    <ns6:poBox rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns6:poBox>
+    <ns6:postCode rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">1000</ns6:postCode>
+    <ns6:postCode rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns6:postCode>
+    <ns6:thoroughfare rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns6:thoroughfare>
+    <ns6:fullAddress rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Centre of Brussels</ns6:fullAddress>
+    <ns6:addressId rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Brussel_office</ns6:addressId>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/content/brussel">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <rdf:type rdf:resource="http://purl.org/dc/terms/Location" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:28:05+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:28:05+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Brussel</dcterms:title>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:28:05+02:00</dcterms:date>
+    <ns6:address rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/brusseloffice" />
+    <ns6:GeographicName rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Brussel</ns6:GeographicName>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/content/brussel-office">
+    <rdf:type rdf:resource="http://data.europa.eu/cv/Channel" />
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:30:42+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T10:55:33+02:00</dcterms:modified>
+    <ns5:ownedBy rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/pwc" />
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:30:42+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Brussel Office</dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/content/christopherule">
+    <rdf:type rdf:resource="http://data.europa.eu/cv/Rule" />
+    <rdf:type rdf:resource="http://rdfs.org/sioc/ns#Item" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:32:44+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:32:44+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">The rule of christophe</dcterms:title>
+    <dcterms:description rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">The rule of christophe</dcterms:description>
+    <ns5:implements rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/christopheframework" />
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:32:44+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Christophe_Rule</dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+    <dcterms:Language>nl</dcterms:Language>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/content/outputofchristophe">
+    <rdf:type rdf:resource="http://data.europa.eu/cv/Output" />
+    <rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Document" />
+    <rdf:type rdf:resource="http://rdfs.org/sioc/ns#Item" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:33:30+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:33:30+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">christophe&#39;s output</dcterms:title>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:33:30+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Output_of_christophe</dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/content/publicserviceofchristophe">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <rdf:type rdf:resource="http://data.europa.eu/cv/PublicService" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:33:44+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:45:48+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Public Service of Christophe</dcterms:title>
+    <dcterms:description rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">This is a test public service for Christophe </dcterms:description>
+    <dcterms:requires rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/node/70" />
+    <dcterms:spatial rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/brussel" />
+    <dcterms:language>nl</dcterms:language>
+    <dcterms:relation rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/node/81" />
+    <ns5:PublicOrganisation rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/trademarkoffice" />
+    <ns5:physicallyAvailableAt rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/brussel-office" />
+    <ns5:hasChannel rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/brussel-office" />
+    <ns5:follows rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/christopherule" />
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T13:33:44+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">publicservice_of_christophe</dcterms:identifier>
+    <dcterms:hasInput rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/node/75" />
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+    <ns9:keyword rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">christophe</ns9:keyword>
+    <ns9:keyword rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">public service</ns9:keyword>
+    <ns5:ProcessingTime rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">2</ns5:ProcessingTime>
+    <ns5:sector rdf:datatype="http://www.w3.org/2004/02/skos/core#Concept"></ns5:sector>
+    <ns5:hasCost rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/node/57" />
+    <dcterms:IsGroupedBy rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/testevent" />
+    <ns5:hasCompetentAuthority rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/trademarkoffice" />
+    <ns5:produces rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/outputofchristophe" />
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/content/testadress">
+    <rdf:type rdf:resource="http://www.w3.org/ns/locn/Address" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T11:52:18+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T11:52:18+02:00</dcterms:modified>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T11:52:18+02:00</dcterms:date>
+    <ns6:addressArea rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns6:addressArea>
+    <ns6:adminUnitL1></ns6:adminUnitL1>
+    <ns6:adminUnitL2></ns6:adminUnitL2>
+    <ns6:locatorDesignator></ns6:locatorDesignator>
+    <ns6:locatorname></ns6:locatorname>
+    <ns6:poBox rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns6:poBox>
+    <ns6:postCode rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns6:postCode>
+    <ns6:thoroughfare rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns6:thoroughfare>
+    <ns6:fullAddress rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></ns6:fullAddress>
+    <ns6:addressId rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">test_adress</ns6:addressId>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/content/test-location">
+    <rdf:type rdf:resource="http://purl.org/dc/terms/Location" />
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T11:58:05+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T11:58:05+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">test location</dcterms:title>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-04T11:58:05+02:00</dcterms:date>
+    <ns6:address rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/testadress" />
+    <ns6:GeographicName rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Geographic test location</ns6:GeographicName>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/content/test-0">
+    <rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Agent" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-09-06T17:19:57+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-09-06T17:19:57+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">test</dcterms:title>
+    <foaf:homepage rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">test</foaf:homepage>
+    <ns5:hasRole rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/publicserviceofchristophe" />
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-09-06T17:19:57+02:00</dcterms:date>
+    <ns6:address rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/content/brusseloffice" />
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">test</dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+    <ns5:uses rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/node/81" />
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/node/57">
+    <rdf:type rdf:resource="http://rdfs.org/sioc/ns#Item" />
+    <rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Cost" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-03-31T12:02:19+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-03-31T12:02:19+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">start business cost</dcterms:title>
+    <dcterms:description rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></dcterms:description>
+    <ns5:currency rdf:datatype="http://www.w3.org/2004/02/skos/core#Concept"></ns5:currency>
+    <ns5:monetary_value rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0</ns5:monetary_value>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-03-31T12:02:19+02:00</dcterms:date>
+    <dcterms:identifier></dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/node/70">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class" />
+    <rdf:type rdf:resource="http://data.europa.eu/cv/PublicService" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-04-06T18:10:14+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-04-22T17:22:22+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></dcterms:title>
+    <dcterms:description rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">VAT refund belgium</dcterms:description>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-04-06T18:10:14+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">VAT refund in Belgium</dcterms:identifier>
+    <dcterms:hasInput rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/node/69" />
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+    <ns9:keyword rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Refund</ns9:keyword>
+    <ns9:keyword rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">VAT</ns9:keyword>
+    <ns5:ProcessingTime rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">2</ns5:ProcessingTime>
+    <ns5:sector rdf:datatype="http://www.w3.org/2004/02/skos/core#Concept"></ns5:sector>
+    <ns5:hasCompetentAuthority rdf:resource="http://52.50.205.146:8890/cpsv-ap_editor/node/77" />
+  </rdf:Description>
+  <rdf:Description rdf:about="http://52.50.205.146:8890/cpsv-ap_editor/node/80">
+    <rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Agent" />
+    <dcterms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-04-29T10:42:14+02:00</dcterms:created>
+    <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-08-02T11:20:42+02:00</dcterms:modified>
+    <dcterms:title rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Spanish patent and trademark office</dcterms:title>
+    <foaf:homepage rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal"></foaf:homepage>
+    <dcterms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2016-04-29T10:42:14+02:00</dcterms:date>
+    <dcterms:identifier rdf:datatype="http://www.w3.org/2000/01/rdf-schema#Literal">Spanishpatentandtrademarkoffice</dcterms:identifier>
+    <sioc:num_replies rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</sioc:num_replies>
+  </rdf:Description>
+</rdf:RDF>

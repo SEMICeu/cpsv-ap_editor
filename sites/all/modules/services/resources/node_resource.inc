@@ -319,6 +319,7 @@ function _node_resource_create($node) {
   $form_state['values'] = $node;
   $form_state['values']['op'] = variable_get('services_node_save_button_' . $node_type . '_resource_create', t('Save'));
   $form_state['programmed_bypass_access_check'] = FALSE;
+  $form_state['no_cache'] = TRUE;
 
   // Build a stub node object for the form in a similar way as node_add() does,
   // but always make the node author default to the current user (if the user
@@ -330,7 +331,13 @@ function _node_resource_create($node) {
   // Contributed modules may check the triggering element in the form state.
   // The triggering element is usually set from the browser's POST request, so
   // we'll automatically set it as the submit action from here.
-  $stub_form = drupal_get_form($node_type . '_node_form', (object) $stub_node);
+  $stub_form_state = array(
+    'no_cache' => TRUE,
+    'build_info' => array(
+      'args' => array((object) $stub_node),
+    ),
+  );
+  $stub_form = drupal_build_form($node_type . '_node_form', $stub_form_state);
   $form_state['triggering_element'] = $stub_form['actions']['submit'];
 
   drupal_form_submit($node_type . '_node_form', $form_state, (object)$stub_node);
@@ -421,7 +428,6 @@ function _node_resource_update($nid, $node) {
   $form_state = array();
   $form_state['values'] = $node;
   $form_state['values']['op'] = variable_get('services_node_save_button_' . $node_type . '_resource_update', t('Save'));
-  $form_state['node'] = $old_node;
   $form_state['programmed_bypass_access_check'] = FALSE;
 
   // Contributed modules may check the triggering element in the form state.
@@ -457,7 +463,7 @@ function _node_resource_delete($nid) {
 }
 
 /**
- * Return an array of optionally paged nids baed on a set of criteria.
+ * Return an array of optionally paged nids based on a set of criteria.
  *
  * An example request might look like
  *
@@ -693,6 +699,9 @@ function _node_resource_attach_file($nid, $field_name, $attach, $field_values) {
   foreach ($file_objs as $key => $file_obj) {
     if (isset($field_values[$key])) {
       foreach ($field_values[$key] as $key => $value) {
+        if ($key == 'fid') {
+          continue;
+        }
         $file_obj->$key = $value;
       }
     }

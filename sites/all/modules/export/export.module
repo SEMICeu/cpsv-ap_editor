@@ -4,60 +4,336 @@ require 'vendor/autoload.php';
 function export_menu() {
 
 	$items['export'] = array(
-		'title' => 'export descriptions',
+		'title' => 'Export descriptions',
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array('export_basic'),
 		'access callback' => TRUE,
 	);
 	return $items;
 }
-
+//test
 function export_basic($form, &$form_state){
-	
-	$form = array();
+
+    $form = array();
+    $form['Type'] = array(
+        '#type' => 'select',
+        '#title' => t('Type'),
+        '#options' => array(
+            0 => t(' ALL '),
+            1 => t('Address'),
+            2 => t('Agent'),
+            3 => t('Business Event'),
+            4 => t('Channel'),
+            5 => t('Concept'),
+            6 => t('Contact Point'),
+            7 => t('Cost'),
+            8 => t('Criterion Requirement'),
+            9 => t('Currency'),
+            10 => t('Collection'),
+            11 => t('Evidence'),
+            12 => t('Legal Resource'),
+            13 => t('Life Event'),
+            14 => t('Linguistic System'),
+            15 => t('Location'),
+            16 => t('Opening Hours Specification'),
+            17 => t('Output'),
+            18 => t('Participation'),
+            19 => t('Public Organisation'),
+            20 => t('Public Service'),
+            21 => t('Public Service Dataset'),
+            23 => t('Role'),
+            24 => t('Rule'),
+            25 => t('Sector'),
+            26 => t('Type'),
+        ),
+        '#default_value' => 0,
+    );
+
+    $form['Title']=array(
+        '#type'=>'textfield',
+        '#title'=>t('Public Organisation Name (optional)'));
+
+    $form['selected'] = array(
+        '#type' => 'select',
+        '#title' => t('Format'),
+        '#options' => array(
+            0 => t('RDF/XML'),
+            1 => t('Turtle'),
+            2 => t('XHTML+RDFa'),
+            3 => t('CSV'),
+            4 => t('Atom+ XML'),
+            5 => t('JSON-LD (with context)'),
+            6 => t('HTML (table)'),
+            7 => t('N-triples'),
+            8 => t('TSV'),
+            9 => t('TriG')
+        ),
+        '#default_value' => 0,
+        '#description' => t('Select the format you need for export.'),
+    );
+   drupal_add_css(drupal_get_path('module','export') .'/display_organization.css');
+   drupal_add_js(drupal_get_path('module', 'export') .'/display_organization.js');
 
 	$form['datamodel1'] = array (
 					'#title' => t('Export'),
 					'#type' => 'submit',
 					'#value' => 'Export Public Service Descriptions',					
 				);
-			
-	return $form;	
+
+    return $form;
 	}
 	
 function export_basic_submit($form, &$form_state) {
+	$key=$form_state['values']['selected'];
+	$selectedValue=$form['selected']['#options'][$key];
+    $fileExtensions=array(
+	    "RDF/XML" => "rdf",
+        "Turtle" => "ttl",
+        "XHTML+RDFa" => "xhtml",
+        "CSV" => "csv",
+        "Atom+ XML" => "xml",
+        "JSON-LD (with context)"=> "jsonld",
+        "HTML (table)" => "html",
+        "N-triples" => "nt",
+        "TSV" => "tsv",
+        "TriG" => "trig"
 
- 	
- 		$query = "CONSTRUCT {?s ?o ?p}
- 		WHERE {GRAPH <http://drupal.cpsv-ap.eu> {?s ?o ?p}}";
- 		
- 		$searchUrl = 'http://52.50.205.146/sparql?'.'query='.urlencode($query).'&format=rdf';
- 		
- 		if(!function_exists('curl_init')){
- 			die('CURL is not installed');
- 		}
- 		
- 		drupal_set_message($searchUrl);
- 		
- 		$ch = curl_init();
- 		curl_setopt($ch,CURLOPT_URL,$searchUrl);
- 		curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
- 		$response=curl_exec($ch);
- 		curl_close($ch);
- 		
- 		 	drupal_set_message("worked? ".$response);
- 	
- 		$dir = getcwd();
- 		
+     );
+    $fileFormats=array(
+        "RDF/XML" => "application/rdf+xml",
+        "Turtle" => "text/rdf+ttl",
+        "XHTML+RDFa" => "application/xhtml+xml",
+        "CSV" => "text/csv",
+        "Atom+ XML" => "application/atom+xml",
+        "JSON-LD (with context)"=> "application/x-json+ld+ctx",
+        "HTML (table)" => "text/html",
+        "N-triples" => "text/ntriples",
+        "TSV" => "text/tab-separated-values",
+        "TriG" => "application/x-trig"
+
+    );
+	$formatValue=$fileFormats[$selectedValue];
+	$extensionValue=$fileExtensions[$selectedValue];
+
+	//retrieve selected value from Type
+    $keyType=$form_state['values']['Type'];
+    $selectedtype=$form['Type']['#options'][$keyType];
+    $rdfTypes=array(
+        " ALL "=> " ALL ",
+        "Address"=> "locn:Address",
+        "Agent" => "dct:Agent",
+        "Business Event"=>"cv:BusinessEvent",
+        "Channel" => "cv:Channel",
+        "Concept" => "skos:Concept",
+        "Contact Point" => "schema:ContactPoint",
+        "Cost" =>"cv:Cost",
+        "Criterion Requirement"=>"cv:CriterionRequirement",
+        "Currency"=>"CurrencyList",
+        "Collection" => "skos:Collection",
+        "Evidence" => "cv:Evidence",
+        "Legal Resource"=>"eli:LegalResource",
+        "Life Event"=>"cv:LifeEvent",
+        "Linguistic System"=>"dct:LinguisticSystem",
+        "Location"=>"dct:Location",
+        "Opening Hours Specification"=>"schema:OpeningHoursSpecification",
+        "Output"=>"cv:Output",
+        "Participation"=>"cv:Participation",
+        "Public Organisation"=>"cv:PublicOrganisation",
+        "Public Service"=>"cpsv:PublicService",
+        "Public Service Dataset"=>"cv:PublicServiceDataset",
+        "Role"=>"Role",
+        "Rule"=>"cpsv:Rule",
+        "Sector" =>"Sector",
+        "Type"=>"Type"
+    );
+
+    $publicOrg=$form_state['values']['Title'];
+    $typeValue=$rdfTypes[$selectedtype];
+    if ($typeValue==" ALL ")
+        $query = "   
+prefix : <http://data.europa.eu/m8g/cpsvap#>
+prefix cv: <http://data.europa.eu/m8g/>
+prefix dct: <http://purl.org/dc/terms/>
+prefix eli: <http://data.europa.eu/eli/ontology#>
+prefix owl: <http://www.w3.org/2002/07/owl#>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix xml: <http://www.w3.org/XML/1998/namespace>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix adms: <http://www.w3.org/ns/adms#>
+prefix cpsv: <http://purl.org/vocab/cpsv#>
+prefix dcat: <http://www.w3.org/ns/dcat#>
+prefix foaf: <http://xmlns.com/foaf/0.1/>
+prefix locn: <http://www.w3.org/ns/locn#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix skos: <http://www.w3.org/2004/02/skos/core#>
+prefix vann: <http://purl.org/vocab/vann/>
+prefix schema: <https://schema.org/>    
+CONSTRUCT {?s ?p ?o}
+    WHERE
+    {
+    GRAPH <http://drupal.cpsv-ap.eu> {?s ?p ?o}
+}";
+    else
+        if($typeValue=="cpsv:PublicService")
+            $query = "   
+prefix : <http://data.europa.eu/m8g/cpsvap#>
+prefix cv: <http://data.europa.eu/m8g/>
+prefix dct: <http://purl.org/dc/terms/>
+prefix eli: <http://data.europa.eu/eli/ontology#>
+prefix owl: <http://www.w3.org/2002/07/owl#>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix xml: <http://www.w3.org/XML/1998/namespace>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix adms: <http://www.w3.org/ns/adms#>
+prefix cpsv: <http://purl.org/vocab/cpsv#>
+prefix dcat: <http://www.w3.org/ns/dcat#>
+prefix foaf: <http://xmlns.com/foaf/0.1/>
+prefix locn: <http://www.w3.org/ns/locn#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix skos: <http://www.w3.org/2004/02/skos/core#>
+prefix vann: <http://purl.org/vocab/vann/>
+prefix schema: <https://schema.org/>    
+CONSTRUCT {?s ?p ?o}
+WHERE
+ {
+ GRAPH <http://drupal.cpsv-ap.eu>
+ {
+   ?s ?p ?o.
+   ?s rdf:type cpsv:PublicService.
+   ?s cv:hasCompetentAuthority ?ca.
+   ?ca dct:identifier ?title.
+   filter(regex(?title, "."\"".$publicOrg."\""." ))
+  }}";
+        else
+            if($typeValue=="Role" or $typeValue=="Type" or $typeValue=="CurrencyList" or $typeValue=="Sector")
+                $query="
+prefix : <http://data.europa.eu/m8g/cpsvap#>
+prefix cv: <http://data.europa.eu/m8g/>
+prefix dct: <http://purl.org/dc/terms/>
+prefix eli: <http://data.europa.eu/eli/ontology#>
+prefix owl: <http://www.w3.org/2002/07/owl#>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix xml: <http://www.w3.org/XML/1998/namespace>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix adms: <http://www.w3.org/ns/adms#>
+prefix cpsv: <http://purl.org/vocab/cpsv#>
+prefix dcat: <http://www.w3.org/ns/dcat#>
+prefix foaf: <http://xmlns.com/foaf/0.1/>
+prefix locn: <http://www.w3.org/ns/locn#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix skos: <http://www.w3.org/2004/02/skos/core#>
+prefix vann: <http://purl.org/vocab/vann/>
+prefix schema: <https://schema.org/>   
+CONSTRUCT {?member ?p ?o}
+    WHERE
+    {
+    GRAPH <http://drupal.cpsv-ap.eu>
+    {
+    ?member ?p ?o.
+    ?s rdf:type skos:Collection.
+    ?s skos:member ?member.
+?s rdfs:label ?name.
+filter(strStarts(?name,"."\"".$typeValue."\""."))
+    }}";
+            else
+                $query = "   
+prefix : <http://data.europa.eu/m8g/cpsvap#>
+prefix cv: <http://data.europa.eu/m8g/>
+prefix dct: <http://purl.org/dc/terms/>
+prefix eli: <http://data.europa.eu/eli/ontology#>
+prefix owl: <http://www.w3.org/2002/07/owl#>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix xml: <http://www.w3.org/XML/1998/namespace>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix adms: <http://www.w3.org/ns/adms#>
+prefix cpsv: <http://purl.org/vocab/cpsv#>
+prefix dcat: <http://www.w3.org/ns/dcat#>
+prefix foaf: <http://xmlns.com/foaf/0.1/>
+prefix locn: <http://www.w3.org/ns/locn#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix skos: <http://www.w3.org/2004/02/skos/core#>
+prefix vann: <http://purl.org/vocab/vann/>
+prefix schema: <https://schema.org/>    
+CONSTRUCT {?s ?p ?o}
+    WHERE
+    {
+    GRAPH <http://drupal.cpsv-ap.eu>
+    {
+    ?s ?p ?o.
+    ?s rdf:type ".$typeValue."
+    }}";
+
+    $searchUrl = 'http://35.181.155.22/sparql?'.'query='.urlencode($query).'&format='.urlencode($formatValue);
+
+    if(!function_exists('curl_init')){
+            die('CURL is not installed');
+    }
+
+    drupal_set_message($searchUrl);
+
+    $ch = curl_init();
+    curl_setopt($ch,CURLOPT_URL,$searchUrl);
+    curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
+    $response=curl_exec($ch);
+    curl_close($ch);
+
+    header("Content-Disposition: attachment; filename=\"export.".$extensionValue."\"");
+    header("Content-Type: ".$formatValue);
+    header("Content-Length: ".strlen($response));
+    echo $response;
+    exit;/* curlsession = curl_init();
+    /*curl_setopt($curlSession, CURLOPT_URL,'http://52.50.205.146/tmp/editorExport.rdf');
+    curl_setopt($curlSession, CURLOPT_BINARYTRANSFER, true);
+    curl_setopt($curlSession, CURLOPT_RETURNTRANSFER, true);
+    $jsonData = curl_exec($curlSession);
+    curl_close($curlSession);
+    echo($jsonData);
+        drupal_set_message("output:".$jsonData);*/
+	if(easyRdf()) {
 		
-		//Change this variable to export to another directory
- 	 	$exportfile= $dir."/sites/rdfExport.rdf";
- 	 	$fh = fopen($exportfile, "w");
- 	 	fwrite($fh, $response);
- 	 	fclose($fh);
- 		
- 	
+		//Change this variable to point to the correct sparql endpoint
+		$endpoint= 'http://35.181.155.22/sparql';
+		$gs= new EasyRdf_Sparql_Client($endpoint);
+
+ $data = $gs->query(
+        'SELECT * WHERE {'.
+                '  ?country rdf:type dbo:Country .'.
+                        '  ?country rdfs:label ?label .'.
+                                '  ?country dc:subject category:Member_states_of_the_United_Nations .'.
+                                        '  FILTER ( lang(?label) = "en" )'.
+                                                '} ORDER BY ?label'
+    
+                                                    );
+	
+    	//Change in the WHERE clausule the *GRAPHURI* to the correct Graph URI that you have chosen
+		$data = $gs->query(
+                    'CONSTRUCT {?s ?o ?p}
+                        WHERE { GRAPH <http://drupal.cpsv-ap.eu> 
+                        {?s ?p ?o}
+                        }');
+                 // 	'SELECT * FROM <http://drupal.cpsv-ap.eu> WHERE {?s ?p ?o}'); 	
+ 	drupal_set_message($data->dump());	
+        drupal_set_message("data:".$data->dump());  
+   
+   // $number = $gs->getUri();
+   // $test = $data->isEmpty();
+ //   drupal_set_message($data);
+   // drupal_set_message($number);	    
+//        drupal_set_message($data);
+       $dir = getcwd();
+//		$serialized= $data->serialise('rdfxml');
+ //       drupal_set_message($serialized);
+//	$array= $data->resources();
+//Change this variable to export to another directory
+// 	 	$exportfile= $dir."/sites/tutfrut.rdf";
+ //		$fh = fopen($exportfile, "w");
+ //	 	fwrite($fh, $serialized);
+// 	 fclose($fh);
+
+    // file_put_contents("exportrdf.txt",$serialized);
+ 	}
 }
+
 
 
 		  

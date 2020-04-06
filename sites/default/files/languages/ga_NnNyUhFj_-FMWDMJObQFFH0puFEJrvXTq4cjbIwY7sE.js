@@ -1,0 +1,1 @@
+Drupal.locale = { 'pluralFormula': function ($n) { return Number((($n==1)?(0):(($n==2)?(1):(($n<7)?(2):(($n<11)?(3):4))))); }, 'strings': {"":{"Edit":"Cuir in eagar","By @name on @date":"Le @name, @date","By @name":"Le @name","Remove":"Bain"}} };

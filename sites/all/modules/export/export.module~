@@ -26,50 +26,28 @@ function export_basic($form, &$form_state){
 	}
 	
 function export_basic_submit($form, &$form_state) {
-	/*                    
+	
 	if(easyRdf()) {
 		
 		//Change this variable to point to the correct sparql endpoint
-		$endpoint= 'http://localhost:8890/sparql';
+		$endpoint= 'SparqlEndpoint';
 		$gs= new EasyRdf_Sparql_client($endpoint);
 
 		//Change in the WHERE clausule the *GRAPHURI* to the correct Graph URI that you have chosen
+		$data = $gs->query(
+		'CONSTRUCT {?s ?o ?p}		
+ 			WHERE { GRAPH <*GRAPHURI*> {?s ?o ?p}} 			
+ 		');
 	
-	
- 		
- 		/*$number = $gs->listNamedGraphs();
- 		
- 		foreach($number as $item) {
- 			drupal_set_message($item->localName());
- 		}*/
- /*		$data = $gs->query(
- 		'CONSTRUCT {?s ?o ?p}
- 		WHERE {GRAPH <http://localhost/cpsv-ap_editor> {?s ?o ?p}} 		 	
- 		 	');                        
- 		
- 		
  		$dir = getcwd();
- 		$serialized= $data->serialise('rdfxml');
-		
+		$serialized= $data->serialise('rdfxml');
+		$array= $data->resources();
 		//Change this variable to export to another directory
- 	 	$exportfile= $dir."/sites/rdfExport.rdf";
+ 	 	$exportfile= $dir."/sites/export.rdf";
  	 	$fh = fopen($exportfile, "w");
  	 	fwrite($fh, $serialized);
  	 	fclose($fh);
- 	 	
- 	 	drupal_set_message("data successfully exported");
- 	}*/
- 	
- 	 // compose query 
- 	 	$sparqlproxy_uri = "http://logd.tw.rpi.edu/ws/sparqlproxy.php";
- 		$params = array();
- 	 	$params["query-uri"] = "http://drupal.cpsv-ap.eu";
- 	 	$params["service-uri"] = "http://52.50.205.146/sparql";
- 	 	$params["output"] =  "rdfxml";
- 	 	$query= $sparqlproxy_uri."?".http_build_query($params,'&') ; //specific for Drupal
- 
- 	 	//show query result
- 	 	drupal_set_message($query);
+ 	}
 }
 
 
