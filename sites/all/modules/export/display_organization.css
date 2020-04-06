@@ -1,0 +1,7 @@
+#edit-title {
+display: none;
+}
+
+label[for=edit-title] {
+display: none;
+}

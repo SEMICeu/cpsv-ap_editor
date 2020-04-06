@@ -1,0 +1,5 @@
+name = CPSV-AP Importer
+description = Get data from the CPSV-AP Harvester into CPSV-AP Editor.
+package = Custom
+core = 7.x
+configure = admin/config/services/cpsv_importer

@@ -1,0 +1,76 @@
+<?php
+require 'vendor/autoload.php';
+
+function export_menu() {
+
+	$items['export'] = array(
+		'title' => 'export descriptions',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('export_basic'),
+		'access callback' => TRUE,
+	);
+	return $items;
+}
+
+function export_basic($form, &$form_state){
+	
+	$form = array();
+
+	$form['datamodel1'] = array (
+					'#title' => t('Export'),
+					'#type' => 'submit',
+					'#value' => 'Export Public Service Descriptions',					
+				);
+			
+	return $form;	
+	}
+	
+function export_basic_submit($form, &$form_state) {
+	
+	if(easyRdf()) {
+		
+		//Change this variable to point to the correct sparql endpoint
+		$endpoint= 'http://52.50.205.146/sparql-graph-crud';
+		$gs= new EasyRdf_Sparql_Client($endpoint);
+
+/*$data = $gs->query(
+        'SELECT * WHERE {'.
+                '  ?country rdf:type dbo:Country .'.
+                        '  ?country rdfs:label ?label .'.
+                                '  ?country dc:subject category:Member_states_of_the_United_Nations .'.
+                                        '  FILTER ( lang(?label) = "en" )'.
+                                                '} ORDER BY ?label'
+    
+                                                    );
+	*/
+    	//Change in the WHERE clausule the *GRAPHURI* to the correct Graph URI that you have chosen
+		$data = $gs->query(
+                    'CONSTRUCT {?s ?o ?p}
+                        WHERE { GRAPH <http://drupal.cpsv-ap.eu> 
+                        {?s ?p ?o}
+                        }');
+                  	 	
+ 	drupal_set_message($data->dump());	
+    //    drupal_set_message("data:".$data->dump());  
+   
+   // $number = $gs->getUri();
+   // $test = $data->isEmpty();
+ //   drupal_set_message($data);
+   // drupal_set_message($number);	    
+//        drupal_set_message($data);
+       $dir = getcwd();
+//		$serialized= $data->serialise('rdfxml');
+ //       drupal_set_message($serialized);
+//	$array= $data->resources();
+//Change this variable to export to another directory
+// 	 	$exportfile= $dir."/sites/tutfrut.rdf";
+ //		$fh = fopen($exportfile, "w");
+ //	 	fwrite($fh, $serialized);
+// 	 fclose($fh);
+
+    // file_put_contents("exportrdf.txt",$serialized);
+ 	}
+}
+
+
+		  

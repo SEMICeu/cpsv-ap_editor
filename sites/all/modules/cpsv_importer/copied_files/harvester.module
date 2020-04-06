@@ -1,0 +1,213 @@
+<?php
+
+/**
+ * @file
+ * Harvest data from the CPSV-AP Harvester into the CPSV-AP Editor.
+ */
+
+
+define('CPSVAP_HARVESTER_API', 'http://cpsv-ap.semic.eu/cpsv-ap_harvester/api');
+define('CPSVAP_EDITOR_API', 'http://cpsv-ap.semic.eu/cpsv-ap_editor/mytest');
+
+use GuzzleHttp\Client;
+require __DIR__ . '/vendor/autoload.php';
+
+/**
+ * Implements hook_help().
+ *
+ * Displays help and module information.
+ *
+ * @param path 
+ *   Which path of the site we're using to display help
+ * @param arg 
+ *   Array that holds the current path as returned from arg() function
+ */
+function harvester_help($path, $arg) {
+  switch ($path) {
+    case "admin/config/services/harvester":
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('The Harvester module takes data from the CPSV-AP Harvester in to the CPSV-AP Editor') . '</p>';
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function harvester_menu() {
+  $items = array();
+
+  $items['admin/config/services/harvester'] = array(
+    'title' => 'Harvester',
+    'description' => 'Configuration for Harvester module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('harvester_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Page callback: harvester settings
+ *
+ * @see harvester_menu()
+ */
+function harvester_form($form, &$form_state) {
+  $form['harvester_api'] = array(
+    '#type' => 'textfield',
+    '#title' => t('CPSV-AP Harvester API'),
+    '#default_value' => variable_get('harvester_api', CPSVAP_HARVESTER_API),
+    '#description' => t('The CPSV-AP Harvester API base URL'),
+    '#required' => TRUE,
+  );
+  $form['editor_api'] = array(
+    '#type' => 'textfield',
+    '#title' => t('CPSV-AP Editor API'),
+    '#default_value' => variable_get('editor_api', CPSVAP_EDITOR_API),
+    '#description' => t('The CPSV-AP Editor API base URL'),
+    '#required' => TRUE,
+  );
+
+  return system_settings_form($form);
+}
+
+function harvester_block_info(){
+    $blocks['harvester']=array('info'=>t('Harvester Testing'));
+    return $blocks;
+}
+
+function harvester_block_view($delta=''){
+    $block['content']='<h1>Harvester Testing</h1>';
+      
+    $array_session = harvester_mylogin('http://cpsv-ap.semic.eu/cpsv-ap_editor/mytest/user/login','admin','PwC_cpsv-ap2018!');
+    if ($array_session[0] != '') {
+       dpm($array_session[0]);
+       dpm($array_session[1]);
+       dpm($array_session[2]);
+       $uri_article = harvester_create_article('http://cpsv-ap.semic.eu/cpsv-ap_editor/mytest/node',$array_session);
+       dpm($uri_article);
+    }
+
+//    dpm($token);
+
+//    $get_node_result=harvester_get_node();
+//    dpm($get_node_result);
+//    $data=json_decode($get_node_result->getBody());
+//    dpm($data);
+//
+//   $create_node_result=apitest_create_node();
+//    dpm($create_node_result);
+
+    return $block;
+}
+
+function harvester_get_node($url){
+    $client = new Client();
+    $res = $client->request('GET', $url);
+//  $res =  drupal_http_request($url);
+    return $res;
+}
+
+function harvester_create_article($url, $array_session){
+        $headers = [
+             'Accept' => 'application/json',
+             'Content-Type' => 'application/json',
+             'X-CSRF-Token' => $array_session[0],
+             'Cookie' => ''.$array_session[1].'='.$array_session[2].''
+        ];
+        
+        $uri_article='';
+
+        $client = new Client();
+       
+
+        $data = array(
+        'title' => 'First forum post',
+        'type'=> 'article',
+        'body'=> array(
+            'und'=>array(
+                0=> array(
+                    'value'=>'This is my first forum post via httprequest.'
+                )
+            )
+        )
+    );
+       $res= '';
+       try {
+        $res = $client->request('POST', $url,  ['headers' => $headers, 'body' => json_encode($data) ]);
+       } catch (Exception $e) {
+        watchdog("harvester",$e->getMessage());
+        watchdog("harvester", '<pre>' . print_r( $headers, true) . '</pre>');
+      }
+        try{
+        if($res->getStatusCode() == 200){
+            $jsonObject = json_decode($res->getBody());
+            watchdog("harvester",  '<pre>' . print_r( $jsonObject, true) . '</pre>');
+            $uri_article = $jsonObject->uri;
+        }
+        } catch (Exception $e) {
+              watchdog("harvester",$e->getMessage());
+        }
+
+        return $uri_article;
+
+}
+
+
+
+function harvester_mylogin($login_url, $username, $password){
+        $body='{
+            "username" :"'.$username.'",
+            "password" :"'.$password.'"
+        }';
+        $headers = [
+             'Accept' => 'application/json',        
+             'Content-Type' => 'application/json'
+        ];
+      
+        $client = new Client();
+        $res = $client->request('POST', $login_url,  ['headers' => $headers, 'body' => $body]);
+
+        $token='';
+        $session_name='';
+        $session_id='';
+        if($res->getStatusCode() == 200){
+            $jsonObject = json_decode($res->getBody());
+            $token = $jsonObject->token;
+            $session_name = $jsonObject->session_name;
+            $session_id = $jsonObject->sessid;
+        }
+        return array($token, $session_name, $session_id);
+}
+
+function apitest_login($username,$password){
+    if(isset($_COOKIE['drupal_session_name'])&& isset($_COOKIE['drupal_session_id'])){
+        return''.$_COOKIE['drupal_session_name'].'='.$_COOKIE['drupal_session_id'].'';
+    }else{
+        $login_url='http://cpsv-ap.semic.eu/cpsv-ap_editor/mytest/user/login';
+        $user_data='{
+            "username" :"'.$username.'",
+            "password" :"'.$password.'"        
+        }';
+        $user_options=array(
+            'headers'=>array('Content-Type'=>'application/json'),
+            'method'=>'POST',
+            'data'=>$user_data
+
+        );
+        $result=drupal_http_request($login_url,$user_options);
+        if($result->code==200){
+            $user_data=json_decode($result->data);
+            setcookie('drupal_session_name',$user_data->session_name);
+            setcookie('drupal_session_id',$user_data->sessid);
+            return ''.$user_data->session_name.'='.$user_data->sessid.'';
+        }else return FALSE;
+    }
+
+}
+
+
+

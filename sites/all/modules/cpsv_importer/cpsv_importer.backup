@@ -1,0 +1,565 @@
+<?php
+
+/**
+ * @file
+ * Harvest data from the CPSV-AP Harvester into the CPSV-AP Editor.
+ */
+
+define('CPSVAP_HARVESTER_API', 'http://cpsv-ap.semic.eu/cpsv-ap_harvester/api');
+define('CPSVAP_EDITOR_API', 'http://cpsv-ap.semic.eu/cpsv-ap_editor/mytest');
+
+use GuzzleHttp\Client;
+require __DIR__ . '/vendor/autoload.php';
+
+/**
+ * Implements hook_help().
+ *
+ * Displays help and module information.
+ *
+ * @param path 
+ *   Which path of the site we're using to display help
+ * @param arg 
+ *   Array that holds the current path as returned from arg() function
+ */
+function cpsv_importer_help($path, $arg) {
+  switch ($path) {
+    case "admin/config/services/cpsv_importer":
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('The CPSV-AP Importer module takes data from the CPSV-AP Harvester in to the CPSV-AP Editor') . '</p>';
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function cpsv_importer_menu() {
+  $items = array();
+
+  $items['admin/config/services/cpsv_importer'] = array(
+    'title' => 'CPSV-AP Importer',
+    'description' => 'Configuration for CPSV-AP Importer module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cpsv_importer_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Page callback: harvester settings
+ *
+ * @see harvester_menu()
+ */
+function cpsv_importer_form($form, &$form_state) {
+   $form['configure_section'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Configure'),
+    );
+ 
+    $form['configure_section']['harvester_api'] = array(
+      '#type' => 'textfield',
+      '#title' => t('CPSV-AP Harvester API'),
+      '#default_value' => variable_get('harvester_api', CPSVAP_HARVESTER_API),
+      '#description' => t('The CPSV-AP Harvester API base URL'),
+      '#required' => TRUE,
+    );
+ 
+    $form['configure_section']['editor_api'] = array(
+      '#type' => 'textfield',
+      '#title' => t('CPSV-AP Editor API'),
+      '#default_value' => variable_get('editor_api', CPSVAP_EDITOR_API),
+      '#description' => t('The CPSV-AP Editor API base URL'),
+      '#required' => TRUE,
+    );
+ 
+    $form['harvest_section'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Execute importing'),
+   );
+ 
+    $form['harvest_section']['harvest_button'] = array(
+      '#type' => 'submit',
+      '#value' => t('Import now!'),
+      '#submit' => array('import_now'),
+    );
+
+
+/*
+  $form['harvester_api'] = array(
+    '#type' => 'textfield',
+    '#title' => t('CPSV-AP Harvester API'),
+    '#default_value' => variable_get('harvester_api', CPSVAP_HARVESTER_API),
+    '#description' => t('The CPSV-AP Harvester API base URL'),
+    '#required' => TRUE,
+  );
+  $form['editor_api'] = array(
+    '#type' => 'textfield',
+    '#title' => t('CPSV-AP Editor API'),
+    '#default_value' => variable_get('editor_api', CPSVAP_EDITOR_API),
+    '#description' => t('The CPSV-AP Editor API base URL'),
+    '#required' => TRUE,
+  );
+*/
+  return system_settings_form($form);
+}
+
+
+/*
+function harvester_block_info(){
+    $blocks['harvester']=array('info'=>t('Harvester Testing'));
+    return $blocks;
+}
+*/
+
+
+//TO DO: replace watchdog with log_message function (see at the bottom) as watchdog is replaced in Drupal 8 .
+function import_now(){
+     $api_url = variable_get('editor_api', CPSVAP_EDITOR_API);
+
+     $array_ps = array();
+     $array_po = array();
+     $array_location = array();
+
+     $array_session = harvester_mylogin($api_url.'/user/login','admin','PwC_cpsv-ap2018!');
+
+
+     if ($array_session[0] != '') {
+        watchdog("harvester",$array_session[0]);
+
+        //TO DO: retrieve the base URL of the harvester api from the form like done at the beginning of this function
+        $ps_array = json_decode(harvester_get_node("http://cpsv-ap.semic.eu/cpsv-ap_harvester/api/v1/publicservices")->getBody());
+
+        //watchdog("harvester", $ps_array[0]);
+      
+        foreach ($ps_array as $ps_url) {
+
+            $nid_ps="";
+            watchdog("harvester", 'PS URI:' . print_r( $ps_url, true));
+
+            $key_ps = array_search($ps_url, array_column($array_ps, 'uri'));
+            watchdog("harvester", 'key ps=' . print_r( $key_ps, true));
+            if($key_ps !== false) {
+                $nid_ps = $array_ps[$key_ps]['nid'];
+                watchdog("harvester", "key ps:" . print_r( $key_ps, true)  . "exist already");
+            }
+            else {
+                 //$array_ps[] = $ps_url;
+                 $ps = json_decode(harvester_get_node("http://cpsv-ap.semic.eu/cpsv-ap_harvester/api/v1/publicServiceByURI?publicServiceURI=" . urlencode($ps_url) )->getBody() );
+                 //watchdog("harvester",$ps->id);
+
+                 $po_uri = $ps->competentAuthorityURI;
+                 $nid_po="";
+                 watchdog("harvester", 'PO URI:' . print_r( $po_uri, true));
+
+                 $key_po = array_search($po_uri, array_column($array_po, 'uri'));
+                 watchdog("harvester", 'key po=' . print_r( $key_po, true));
+                 if($key_po !== false) {
+                    $nid_po = $array_po[$key_po]['nid'];
+                    watchdog("harvester", "key po:" . print_r( $key_po, true)  . "exist already");
+                 }
+                 else {
+               	      //watchdog("harvester",$po_uri);
+                      $po = json_decode(harvester_get_node("http://cpsv-ap.semic.eu/cpsv-ap_harvester/api/v1/publicOrganizationByURI?publicOrganizationURI=" . urlencode($po_uri) )->getBody() );
+                      
+                      $location_uri = $po->spatialURI;
+                      $nid_location="";
+                      watchdog("harvester", 'LOCATION URI:' . print_r( $location_uri, true));
+
+                      $key_location = array_search($location_uri, array_column($array_location, 'uri'));
+                      watchdog("harvester", 'key location=' . print_r( $key, true));
+                      if($key_location !== false) {
+                           $nid_location = $array_location[$key_location]['nid'];
+                           watchdog("harvester", "key location:" . print_r( $key_location, true)  . "exist already");
+                      }
+                      else {
+                           //watchdog("harvester",$location_uri);
+                           $location = json_decode(harvester_get_node("http://cpsv-ap.semic.eu/cpsv-ap_harvester/api/v1/locationByURI?locationURI=" . urlencode($location_uri) )->getBody() );
+                           $location_title = $location->title;
+                           //watchdog("harvester",$location_title);
+
+                           $nid_location = harvester_create_location($api_url.'/node',$array_session, $location_title);
+                           watchdog("harvester",'<pre>nid_location=' . print_r( $nid_location, true)  . "</pre>");
+                           $array_location[] = array(uri => $location_uri, nid => $nid_location);
+                           
+                      }
+    
+                       $po_id = $po->id;
+                       $po_label = $po->label;
+                       $nid_po = harvester_create_public_organisation($api_url.'/node',$array_session, $nid_location, $po_id, $po_label);
+                       watchdog("harvester",'<pre>nid_po=' . print_r( $nid_po, true)  . "</pre>");
+                       $array_po[] = array(uri => $po_uri, nid => $nid_po);
+                  
+                 }
+
+                 $ps_id = $ps->id;
+                 $ps_title = $ps->title;
+                 $ps_description = $ps->description;
+                 $nid_ps = harvester_create_public_service($api_url.'/node',$array_session, $nid_po, $ps_id, $ps_title, $ps_description);
+                 watchdog("harvester",'<pre>nid_ps=' . print_r( $nid_ps, true)  . "</pre>");
+                 $array_ps[] = array(uri => $ps_url, nid => $nid_ps);
+
+
+                 
+            }
+
+        }
+        
+        //$uri_article = harvester_create_article($api_url.'/node',$array_session);
+        //watchdog("harvester",$uri_article);
+      
+        //$nid_location = harvester_create_location($api_url.'/node',$array_session);
+        //watchdog("harvester",$nid_location);
+        
+        //$nid_public_organisation = harvester_create_public_organisation($api_url.'/node',$array_session,$nid_location);
+	
+	//$nid_public_service = harvester_create_public_service($api_url.'/node',$array_session,$nid_public_organisation);
+
+	$logout_ok = harvester_mylogout($api_url.'/user/logout',$array_session);
+   
+ }
+        $num_ps = count($array_ps);
+        $num_po = count($array_po);
+        $num_loc = count($array_location);
+
+        //TO DO: like for watchdog the drupal_set_message is Deprecated in Drupal 8.50 so better encapulate in a function such as "display_message"
+        drupal_set_message('Imported successfully: ' . $num_ps . ' public services, ' . $num_po . ' public organizations and ' . $num_loc . ' locations . Please check the <a href="' . $GLOBALS['base_url'] . '/admin/content">content page</a> for more information.' );
+}
+
+
+/*
+function harvester_block_view($delta=''){
+    $block['content']='<h1>Harvester Testing</h1>';
+      
+    $array_session = harvester_mylogin('http://cpsv-ap.semic.eu/cpsv-ap_editor/mytest/user/login','admin','PwC_cpsv-ap2018!');
+    if ($array_session[0] != '') {
+       dpm($array_session[0]);
+       dpm($array_session[1]);
+       dpm($array_session[2]);
+       $uri_article = harvester_create_article('http://cpsv-ap.semic.eu/cpsv-ap_editor/mytest/node',$array_session);
+       $nid_location = harvester_create_location('http://cpsv-ap.semic.eu/cpsv-ap_editor/mytest/node',$array_session);
+       $nid_public_organisation = harvester_create_public_organisation('http://cpsv-ap.semic.eu/cpsv-ap_editor/mytest/node',$array_session,$nid_location);
+ 
+      dpm($uri_article);
+      dpm($nid_location);
+     // dpm($nid_public_organisation);
+    }
+
+//    dpm($token);
+
+//    $get_node_result=harvester_get_node();
+//    dpm($get_node_result);
+//    $data=json_decode($get_node_result->getBody());
+//    dpm($data);
+//
+//   $create_node_result=apitest_create_node();
+//    dpm($create_node_result);
+
+    return $block;
+}
+*/
+
+
+function harvester_get_node($url){
+    $client = new Client();
+    $res = $client->request('GET', $url);
+//  $res =  drupal_http_request($url);
+    return $res;
+}
+
+function harvester_create_article($url, $array_session){
+        $headers = [
+             'Accept' => 'application/json',
+             'Content-Type' => 'application/json',
+             'X-CSRF-Token' => $array_session[0],
+             'Cookie' => ''.$array_session[1].'='.$array_session[2].''
+        ];
+        
+        $uri_article='';
+
+        $client = new Client();
+       
+
+        $data = array(
+        'title' => 'First forum post',
+        'type'=> 'article',
+        'body'=> array(
+            'und'=>array(
+                0=> array(
+                    'value'=>'This is my first forum post via httprequest.'
+                )
+            )
+        )
+    );
+       $res= '';
+       try {
+        $res = $client->request('POST', $url,  ['headers' => $headers, 'body' => json_encode($data) ]);
+       } catch (Exception $e) {
+        watchdog("harvester",$e->getMessage());
+        watchdog("harvester", '<pre>' . print_r( $headers, true) . '</pre>');
+      }
+        try{
+        if($res->getStatusCode() == 200){
+            $jsonObject = json_decode($res->getBody());
+            watchdog("harvester",  '<pre>' . print_r( $jsonObject, true) . '</pre>');
+            $uri_article = $jsonObject->uri;
+        }
+        } catch (Exception $e) {
+              watchdog("harvester",$e->getMessage());
+        }
+
+        return $uri_article;
+
+}
+
+
+function harvester_create_location($url, $array_session, $title){
+	$headers = [
+             'Accept' => 'application/json',
+             'Content-Type' => 'application/json',
+             'X-CSRF-Token' => $array_session[0],
+             'Cookie' => ''.$array_session[1].'='.$array_session[2].''
+        ];
+
+        $uri_location='';
+	$nid_location='';
+
+        $client = new Client();
+   	
+	$data = array(
+ 	'title'=> $title,
+	'type'=> 'location'
+	);
+
+        $res= '';
+        try {
+         $res = $client->request('POST', $url,  ['headers' => $headers, 'body' => json_encode($data) ]);
+        } catch (Exception $e) {
+         watchdog("harvester",$e->getMessage());
+         watchdog("harvester", '<pre>' . print_r( $headers, true) . '</pre>');
+       }
+
+         try{
+         if($res->getStatusCode() == 200){
+             $jsonObject = json_decode($res->getBody());
+             watchdog("harvester",  '<pre>' . print_r( $jsonObject, true) . '</pre>');
+             $uri_location = $jsonObject->uri;
+	     $nid_location = $jsonObject->nid;
+         }
+         } catch (Exception $e) {
+               watchdog("harvester",$e->getMessage());
+         }
+
+         return $nid_location;
+
+}
+
+
+function harvester_create_public_organisation($url, $array_session,$nid_location, $id, $label){
+
+         $headers = [
+              'Accept' => 'application/json',
+              'Content-Type' => 'application/json',
+              'X-CSRF-Token' => $array_session[0],
+              'Cookie' => ''.$array_session[1].'='.$array_session[2].''
+         ];
+
+         $nid_public_organisation='';
+
+         $client = new Client();
+
+         $data = array(
+         'type'=> 'public_organizations',
+         'title'=> $id,
+	 'field_preferred_label'=>array(
+		'und'=>array(
+		    0=>array(
+				'value'=>$label
+		        )
+                	)
+		),
+	 'field_spatial_public_organizatio'=>array(
+			'und'=>array(
+				'nid'=>$nid_location
+				
+			)
+		)
+         );
+
+
+
+         $res= '';
+         try {
+          $res = $client->request('POST', $url,  ['headers' => $headers, 'body' => json_encode($data) ]);
+         } catch (Exception $e) {
+          watchdog("harvester",$e->getMessage());
+          watchdog("harvester", '<pre>' . print_r( $headers, true) . '</pre>');
+        }
+
+
+
+          try{
+          if($res->getStatusCode() == 200){
+              $jsonObject = json_decode($res->getBody());
+              watchdog("harvester",  '<pre>' . print_r( $jsonObject, true) . '</pre>');
+              $nid_public_organisation = $jsonObject->nid;
+          }
+          } catch (Exception $e) {
+                watchdog("harvester",$e->getMessage());
+          }
+
+          return $nid_public_organisation;
+
+}
+
+
+function harvester_create_public_service($url,$array_session,$nid_public_organisation,$id,$title,$description){
+
+
+$headers = [
+               'Accept' => 'application/json',
+               'Content-Type' => 'application/json',
+               'X-CSRF-Token' => $array_session[0],
+               'Cookie' => ''.$array_session[1].'='.$array_session[2].''
+          ];
+
+          $nid_public_service='';
+
+          $client = new Client();
+
+
+          $data = array(
+          'type'=> 'public_service',
+          'title'=> $id,
+          'field_name'=>array(
+                 'en'=>array(
+                     0=>array(
+                                 'value'=>$title
+                         )
+                        )
+                 ),
+          'field_description'=>array(
+                         'und'=>array(
+			0=>array(
+                                 'value'=>$description
+				)
+                         )
+                 ),
+       	
+	'field_competent_authority'=>array(
+			'und'=>array(
+				'nid'=>$nid_public_organisation
+			)
+		
+		),
+
+	'langauge'=>'en'
+
+	);
+	
+
+
+          $res= '';
+          try {
+          $res = $client->request('POST', $url,  ['headers' => $headers, 'body' => json_encode($data) ]);
+          } catch (Exception $e) {
+           watchdog("harvester",$e->getMessage());
+           watchdog("harvester", '<pre>' . print_r( $headers, true) . '</pre>');
+         }
+
+
+
+           try{
+           if($res->getStatusCode() == 200){
+               $jsonObject = json_decode($res->getBody());
+               watchdog("harvester",  '<pre>' . print_r( $jsonObject, true) . '</pre>');
+               $nid_public_service = $jsonObject->nid;
+           }
+           } catch (Exception $e) {
+                 watchdog("harvester",$e->getMessage());
+           }
+
+	return $nid_public_service;
+
+
+
+}
+
+
+function harvester_mylogin($login_url, $username, $password){
+        $body='{
+            "username" :"'.$username.'",
+            "password" :"'.$password.'"
+        }';
+        $headers = [
+             'Accept' => 'application/json',
+             'Content-Type' => 'application/json'
+        ];
+      
+        $client = new Client();
+        $res = $client->request('POST', $login_url,  ['headers' => $headers, 'body' => $body]);
+
+        $token='';
+        $session_name='';
+        $session_id='';
+        if($res->getStatusCode() == 200){
+            $jsonObject = json_decode($res->getBody());
+            $token = $jsonObject->token;
+            $session_name = $jsonObject->session_name;
+            $session_id = $jsonObject->sessid;
+        }
+        return array($token, $session_name, $session_id);
+}
+
+function harvester_mylogout($logout_url, $array_session){
+
+         $headers = [
+              'Accept' => 'application/json',
+              'X-CSRF-Token' => $array_session[0],
+              'Cookie' => ''.$array_session[1].'='.$array_session[2].''
+         ];
+
+   
+         $client = new Client();
+         $res = $client->request('POST', $logout_url,  ['headers' => $headers]);
+         watchdog("harvester",$res->getBody());
+	 return $res->getBody();
+
+}
+
+function apitest_login($username,$password){
+    if(isset($_COOKIE['drupal_session_name'])&& isset($_COOKIE['drupal_session_id'])){
+        return''.$_COOKIE['drupal_session_name'].'='.$_COOKIE['drupal_session_id'].'';
+    }else{
+        $login_url='http://cpsv-ap.semic.eu/cpsv-ap_editor/mytest/user/login';
+        $user_data='{
+            "username" :"'.$username.'",
+            "password" :"'.$password.'"        
+        }';
+        $user_options=array(
+            'headers'=>array('Content-Type'=>'application/json'),
+            'method'=>'POST',
+            'data'=>$user_data
+
+        );
+        $result=drupal_http_request($login_url,$user_options);
+        if($result->code==200){
+            $user_data=json_decode($result->data);
+            setcookie('drupal_session_name',$user_data->session_name);
+            setcookie('drupal_session_id',$user_data->sessid);
+            return ''.$user_data->session_name.'='.$user_data->sessid.'';
+        }else return FALSE;
+    }
+
+}
+
+function log_message($message){
+     watchdog("harvester", '<pre>' . print_r($message, true) . '</pre>');
+ }
+
+
+
+

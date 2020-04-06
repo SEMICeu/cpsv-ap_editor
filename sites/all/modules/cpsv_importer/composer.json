@@ -1,0 +1,8 @@
+{
+    "name": "drupal/cpsv_importer",
+    "type": "drupal-module",
+    "description": "CPSV-AP importeris a library and a module to get data from CPSV-AP Harvester into the CPSV-AP Editor.",
+    "require": {
+        "guzzlehttp/guzzle": "~6.0"
+    }
+}

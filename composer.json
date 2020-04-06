@@ -2,7 +2,8 @@
     "require": {
         "monolog/monolog": "1.0.*",
 		"easyrdf/easyrdf": "*",
-		"ml/json-ld": "~1.0"
+		"ml/json-ld": "~1.0",
+        "botk/rdf": "4.0.1"
     }
 	
 	

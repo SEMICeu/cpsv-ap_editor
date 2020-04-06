@@ -1,0 +1,1265 @@
+<?php
+
+/**
+ * @file
+ * Harvest data from the CPSV-AP Harvester into the CPSV-AP Editor.
+ */
+
+define('CPSVAP_HARVESTER_API', 'http://cpsv-ap.semic.eu/cpsv-ap_harvester/api');
+define('CPSVAP_EDITOR_API', 'http://cpsv-ap.semic.eu/cpsv-ap_editor/api');
+
+use GuzzleHttp\Client;
+require __DIR__ . '/vendor/autoload.php';
+
+/**
+ * Implements hook_help().
+ *
+ * Displays help and module information.
+ *
+ * @param path 
+ *   Which path of the site we're using to display help
+ * @param arg 
+ *   Array that holds the current path as returned from arg() function
+ */
+function cpsv_importer_help($path, $arg) {
+  switch ($path) {
+    case "admin/config/services/cpsv_importer":
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('The CPSV-AP Importer module takes data from the CPSV-AP Harvester in to the CPSV-AP Editor') . '</p>';
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function cpsv_importer_menu() {
+  $items = array();
+
+  $items['admin/config/services/cpsv_importer'] = array(
+    'title' => 'CPSV-AP Importer',
+    'description' => 'Configuration for CPSV-AP Importer module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cpsv_importer_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Page callback: harvester settings
+ *
+ * @see harvester_menu()
+ */
+function cpsv_importer_form($form, &$form_state) {
+   $form['configure_section'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Configure'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
+    );
+ 
+    $form['configure_section']['harvester_api'] = array(
+      '#type' => 'textfield',
+      '#title' => t('CPSV-AP Harvester API'),
+      '#default_value' => variable_get('harvester_api', CPSVAP_HARVESTER_API),
+      '#description' => t('The CPSV-AP Harvester API base URL'),
+      '#required' => TRUE,
+    );
+ 
+    $form['configure_section']['editor_api'] = array(
+      '#type' => 'textfield',
+      '#title' => t('CPSV-AP Editor API'),
+      '#default_value' => variable_get('editor_api', CPSVAP_EDITOR_API),
+      '#description' => t('The CPSV-AP Editor API base URL'),
+      '#required' => TRUE,
+    );
+ 
+    $form['harvest_section'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Execute importing'),
+   );
+ 
+    $form['harvest_section']['harvest_button'] = array(
+      '#type' => 'submit',
+      '#value' => t('Import now!'),
+      '#submit' => array('import_now'),
+    );
+
+
+/*
+  $form['harvester_api'] = array(
+    '#type' => 'textfield',
+    '#title' => t('CPSV-AP Harvester API'),
+    '#default_value' => variable_get('harvester_api', CPSVAP_HARVESTER_API),
+    '#description' => t('The CPSV-AP Harvester API base URL'),
+    '#required' => TRUE,
+  );
+  $form['editor_api'] = array(
+    '#type' => 'textfield',
+    '#title' => t('CPSV-AP Editor API'),
+    '#default_value' => variable_get('editor_api', CPSVAP_EDITOR_API),
+    '#description' => t('The CPSV-AP Editor API base URL'),
+    '#required' => TRUE,
+  );
+*/
+  return system_settings_form($form);
+}
+
+
+/*
+function harvester_block_info(){
+    $blocks['harvester']=array('info'=>t('Harvester Testing'));
+    return $blocks;
+}
+*/
+
+
+//TO DO: replace watchdog with log_message function (see at the bottom) as watchdog is replaced in Drupal 8 .
+function import_now(){
+     $api_url = variable_get('editor_api', CPSVAP_EDITOR_API);
+
+     $array_ps = array();
+     $array_po = array();
+     $array_location = array();
+     $array_sector  = array();
+     $array_type = array();
+     $array_language = array();
+     $array_event = array();
+     $array_evidence = array();
+     $array_channel = array();
+     $array_contact_point = array();
+
+     $array_session = harvester_mylogin($api_url.'/user/login','admin','PwC_cpsv-ap2018!');
+
+
+     if ($array_session[0] != '') {
+        //watchdog("harvester",$array_session[0]);
+
+        //TO DO: retrieve the base URL of the harvester api from the form like done at the beginning of this function
+        $ps_array = json_decode(harvester_get_node("/v1/publicservices")->getBody());
+
+        //watchdog("harvester", $ps_array[0]);
+      
+        foreach ($ps_array as $ps_url) {
+
+            $nid_ps="";
+            //watchdog("harvester", 'PS URI:' . print_r( $ps_url, true));
+
+            $key_ps = array_search($ps_url, array_column($array_ps, 'uri'));
+            //watchdog("harvester", 'key ps=' . print_r( $key_ps, true));
+            if($key_ps !== false) {
+                $nid_ps = $array_ps[$key_ps]['nid'];
+                //watchdog("harvester", "key ps:" . print_r( $key_ps, true)  . "exist already");
+            }
+            else {
+                 //$array_ps[] = $ps_url;
+                 $ps = json_decode(harvester_get_node("/v1/publicServiceByURI?publicServiceURI=" . urlencode($ps_url) )->getBody() );
+                 //watchdog("harvester",$ps->id);
+
+                 $po_uri = $ps->competentAuthorityURI;
+                 $nid_po="";
+                 watchdog("harvester", 'PO URI:' . print_r( $po_uri, true));
+
+                 $key_po = array_search($po_uri, array_column($array_po, 'uri'));
+                 watchdog("harvester", 'key po=' . print_r( $key_po, true));
+                 if($key_po !== false) {
+                    $nid_po = $array_po[$key_po]['nid'];
+                    watchdog("harvester", "key po:" . print_r( $key_po, true)  . "exist already");
+                 }
+                 else {
+                      //ADD PUBLIC ORGANIZATION
+               	      //watchdog("harvester",$po_uri);
+                      $po = json_decode(harvester_get_node("/v1/publicOrganizationByURI?publicOrganizationURI=" . urlencode($po_uri) )->getBody() );
+                      
+                      $location_uri = $po->spatialURI;
+                      $nid_location="";
+                      watchdog("harvester", 'LOCATION URI:' . print_r( $location_uri, true));
+
+                      $key_location = array_search($location_uri, array_column($array_location, 'uri'));
+                      watchdog("harvester", 'key location=' . print_r( $key, true));
+                      if($key_location !== false) {
+                           $nid_location = $array_location[$key_location]['nid'];
+                           watchdog("harvester", "key location:" . print_r( $key_location, true)  . "exist already");
+                      }
+                      else {
+                           // ADD LOCATION
+                           //watchdog("harvester",$location_uri);
+                           $location = json_decode(harvester_get_node("/v1/locationByURI?locationURI=" . urlencode($location_uri) )->getBody() );
+                           $location_title = $location->title;
+                           //watchdog("harvester",$location_title);
+
+                           $nid_location = harvester_create_location($api_url.'/node',$array_session, $location_title);
+                           watchdog("harvester",'<pre>nid_location=' . print_r( $nid_location, true)  . "</pre>");
+                           $array_location[] = array(uri => $location_uri, nid => $nid_location);
+                           
+                      }
+    
+                       $po_id = $po->id;
+                       $po_label = $po->label;
+                       $nid_po = harvester_create_public_organisation($api_url.'/node',$array_session, $nid_location, $po_id, $po_label);
+                       watchdog("harvester",'<pre>nid_po=' . print_r( $nid_po, true)  . "</pre>");
+                       $array_po[] = array(uri => $po_uri, nid => $nid_po);
+                  
+                 }
+
+                 // ADD PUBBLIC SERVICE SECTOR
+                 $ps_sector = array();
+                 if(isset($ps->sectorURI)){
+                   if(is_array($ps->sectorURI)) {
+                   $ps_sector = $ps->sectorURI;
+                   } else {
+                   $ps_sector[] = $ps->sectorURI;
+                   }
+                 }
+                 watchdog("harvester",'<pre>ps_sector=' . print_r( $ps_sector, true)  . "</pre>");
+                 $nid_sector_array = array();
+                 foreach ($ps_sector as $sector_url) {
+                   
+                     watchdog("harvester", 'SECTOR URI:' . print_r( $sector_url, true));
+                     $key_sector = array_search($sector_url, array_column($array_sector, 'uri'));
+                     watchdog("harvester", 'key sector =' . print_r( $key_sector, true));
+                     if($key_sector !== false) {
+                        $nid_sector = $array_sector[$key_sector]['nid'];
+                        watchdog("harvester", "key sector:" . print_r( $key_sector, true)  . "exist already");
+                     } else {
+                        watchdog("harvester",'CREATE SECTOR' . $sector_url);
+                        $concept = json_decode(harvester_get_node("/v1/conceptByURI?conceptURI=" . urlencode($sector_url) )->getBody() );
+                        $sector_title = $concept->prefLabel;
+                        //watchdog("harvester",$sector_title);
+
+                        $nid_sector = harvester_create_sector($api_url.'/node',$array_session, $sector_title);
+                        watchdog("harvester",'<pre>nid_sector=' . print_r( $nid_sector, true)  . "</pre>");
+                        $array_sector[] = array(uri => $sector_url, nid => $nid_sector);
+
+                    }
+                    $nid_sector_array[] = $nid_sector;
+                 }
+                  watchdog("harvester",'<pre>nid_sector_array=' . print_r( $nid_sector_array, true)  . "</pre>");
+
+                 // ADD PUBLIC SERVICE TYPE
+                 $ps_type = array();
+                 if(isset($ps->typeURI)){
+                     if(is_array($ps->typeURI)) {
+                      $ps_type = $ps->typeURI;
+                     } else {
+                      $ps_type[] = $ps->typeURI;
+                     }
+                  }
+                  watchdog("harvester",'<pre>ps_type=' . print_r( $ps_type, true)  . "</pre>");
+                  $nid_type_array = array();
+                  foreach ($ps_type as $type_url) {
+
+                     watchdog("harvester", 'TYPE URI:' . print_r( $type_url, true));
+                     $key_type = array_search($type_url, array_column($array_type, 'uri'));
+                     watchdog("harvester", 'key type =' . print_r( $key_type, true));
+                     if($key_type !== false) {
+                        $nid_type = $array_type[$key_type]['nid'];
+                        watchdog("harvester", "key type:" . print_r( $key_type, true)  . "exist already");
+                     } else {
+                        watchdog("harvester",'CREATE TYPE' . $type_url);
+                        $concept = json_decode(harvester_get_node("/v1/conceptByURI?conceptURI=" . urlencode($type_url) )->getBody() );
+                        $type_title = $concept->prefLabel;
+                        //watchdog("harvester",$type_title);
+
+                        $nid_type = harvester_create_type($api_url.'/node',$array_session, $type_title);
+                        watchdog("harvester",'<pre>nid_type=' . print_r( $nid_type, true)  . "</pre>");
+                        $array_type[] = array(uri => $type_url, nid => $nid_type);
+                     }
+
+                     $nid_type_array[] = $nid_type;
+                 }
+
+                 watchdog("harvester",'<pre>nid_type_array=' . print_r( $nid_type_array, true)  . "</pre>");
+
+                 // ADD PUBLIC SERVICE LANGUAGE
+                 $ps_language = array();
+                 if(isset($ps->languageURI)){
+                      if(is_array($ps->languageURI)) {
+                        $ps_language = $ps->languageURI;
+                      } else {
+                        $ps_language[] = $ps->languageURI;
+                      }
+                 }
+                 watchdog("harvester",'<pre>ps_language=' . print_r( $ps_language, true)  . "</pre>");
+                 $nid_language_array = array();
+                 foreach ($ps_language as $language_url) {
+
+                      watchdog("harvester", 'LANGUAGE URI:' . print_r( $language_url, true));
+                      $key_language = array_search($language_url, array_column($array_language, 'uri'));
+                      watchdog("harvester", 'key language =' . print_r( $key_language, true));
+                      if($key_language !== false) {
+                         $nid_language = $array_language[$key_language]['nid'];
+                         watchdog("harvester", "key language:" . print_r( $key_language, true)  . "exist already");
+                      } else {
+                         watchdog("harvester",'CREATE LANGUAGE' . $language_url);
+                         $linguistic_system = json_decode(harvester_get_node("/v1/linguisticSystemByURI?linguisticSystemURI=" . urlencode($language_url) )->getBody() );
+                         $language_title = $linguistic_system->prefLabel;
+                         //watchdog("harvester",$evidence_title);
+
+                         $nid_language = harvester_create_language($api_url.'/node',$array_session, $language_title);
+                         watchdog("harvester",'<pre>nid_language=' . print_r( $nid_language, true)  . "</pre>");
+                         $array_language[] = array(uri => $language_url, nid => $nid_language);
+                      }
+
+                      $nid_language_array[] = $nid_language;
+                  }
+
+                  watchdog("harvester",'<pre>nid_language_array=' . print_r( $nid_language_array, true)  . "</pre>");
+
+
+                  // ADD PUBLIC SERVICE EVENT
+                  $ps_event = array();
+                  if(isset($ps->eventURI)){
+                       if(is_array($ps->eventURI)) {
+                          $ps_event = $ps->eventURI;
+                       } else {
+                          $ps_event[] = $ps->eventURI;
+                       }
+                  }
+                  watchdog("harvester",'<pre>ps_event=' . print_r( $ps_event, true)  . "</pre>");
+                  $nid_event_array = array();
+                  foreach ($ps_event as $event_url) {
+
+                       watchdog("harvester", 'EVENT URI:' . print_r( $event_url, true));
+                       $key_event = array_search($event_url, array_column($array_event, 'uri'));
+                       watchdog("harvester", 'key event =' . print_r( $key_event, true));
+                       if($key_event !== false) {
+                          $nid_event = $array_event[$key_event]['nid'];
+                          watchdog("harvester", "key event:" . print_r( $key_event, true)  . "exist already");
+                       } else {
+                          watchdog("harvester",'CREATE EVENT' . $event_url);
+                          $event= '';
+                          $type_event ='';
+                          if(harvester_get_node("/v1/businessEventByURI?businessEventURI=" . urlencode($event_url) )->getStatusCode() == 200) {
+                             $event = json_decode(harvester_get_node("/v1/businessEventByURI?businessEventURI=" . urlencode($event_url) )->getBody() );
+                             $type_event = "event";
+                              watchdog("harvester", "IS A BUSINESS EVENT");
+
+                          } else {
+                             $event = json_decode(harvester_get_node("/v1/lifeEventByURI?lifeEventURI=" . urlencode($event_url) )->getBody() );
+                             $type_event = "life_event_class";
+                             watchdog("harvester", "IS A LIFE EVENT");
+
+                          }
+                          $event_id = $event->id;
+                          $event_title = $event->title;
+                          //watchdog("harvester",$event_title);
+
+                          $nid_event = harvester_create_event($api_url.'/node',$array_session, $type_event, $event_id, $event_title);
+                          watchdog("harvester",'<pre>nid_event=' . print_r( $nid_event, true)  . "</pre>");
+                          $array_event[] = array(uri => $event_url, nid => $nid_event);
+                       }
+
+                       $nid_event_array[] = $nid_event;
+                   }
+
+                   watchdog("harvester",'<pre>nid_event_array=' . print_r( $nid_event_array, true)  . "</pre>");
+
+
+                  // ADD PUBLIC SERVICE EVIDENCE
+                  $ps_evidence = array();
+                  if(isset($ps->evidenceURI)){
+                       if(is_array($ps->evidenceURI)) {
+                         $ps_evidence = $ps->evidenceURI;
+                       } else {
+                         $ps_evidence[] = $ps->evidenceURI;
+                       }
+                  }
+                  watchdog("harvester",'<pre>ps_evidence=' . print_r( $ps_evidence, true)  . "</pre>");
+                  $nid_evidence_array = array();
+                  foreach ($ps_evidence as $evidence_url) {
+
+                       watchdog("harvester", 'EVIDENCE URI:' . print_r( $evidence_url, true));
+                       $key_evidence = array_search($evidence_url, array_column($array_evidence, 'uri'));
+                       watchdog("harvester", 'key evidence =' . print_r( $key_evidence, true));
+                       if($key_evidence !== false) {
+                          $nid_evidence = $array_evidence[$key_evidence]['nid'];
+                          watchdog("harvester", "key evidence:" . print_r( $key_evidence, true)  . "exist already");
+                       } else {
+                          watchdog("harvester",'CREATE EVIDENCE' . $evidence_url);
+                          $evidence = json_decode(harvester_get_node("/v1/evidenceByURI?evidenceURI=" . urlencode($evidence_url) )->getBody() );
+                          $evidence_id = $evidence->id;
+                          $evidence_title = $evidence->title;
+                          //watchdog("harvester",$evidence_title);
+
+                          $nid_evidence = harvester_create_evidence($api_url.'/node',$array_session, $evidence_id, $evidence_title);
+                          watchdog("harvester",'<pre>nid_evidence=' . print_r( $nid_evidence, true)  . "</pre>");
+                          $array_evidence[] = array(uri => $evidence_url, nid => $nid_evidence);
+                       }
+
+                       $nid_evidence_array[] = $nid_evidence;
+                   }
+
+                   watchdog("harvester",'<pre>nid_evidence_array=' . print_r( $nid_evidence_array, true)  . "</pre>");
+
+
+                   // ADD PUBLIC SERVICE CHANNEL
+                   $ps_channel = array();
+                   if(isset($ps->channelURI)){
+                        if(is_array($ps->channelURI)) {
+                          $ps_channel = $ps->channelURI;
+                        } else {
+                          $ps_channel[] = $ps->channelURI;
+                        }
+                   }
+                   watchdog("harvester",'<pre>ps_channel=' . print_r( $ps_channel, true)  . "</pre>");
+                   $nid_channel_array = array();
+                   foreach ($ps_channel as $channel_url) {
+
+                        watchdog("harvester", 'CHANNEL URI:' . print_r( $channel_url, true));
+                        $key_channel = array_search($channel_url, array_column($array_channel, 'uri'));
+                        watchdog("harvester", 'key channel =' . print_r( $key_channel, true));
+                        if($key_channel !== false) {
+                           $nid_channel = $array_channel[$key_channel]['nid'];
+                           watchdog("harvester", "key channel:" . print_r( $key_channel, true)  . "exist already");
+                        } else {
+                           watchdog("harvester",'CREATE CHANNEL' . $channel_url);
+                           $channel = json_decode(harvester_get_node("/v1/channelByURI?channelURI=" . urlencode($channel_url) )->getBody() );
+                           
+                           // ADD CHANNEL EVIDENCE
+                          $channel_evidence = array();
+                          if(isset($channel->evidenceURI)){
+                             if(is_array($channel->evidenceURI)) {
+                                $channel_evidence = $channel->evidenceURI;
+                             } else {
+                                $channel_evidence[] = $channel->evidenceURI;
+                             }
+                          }
+                          watchdog("harvester",'<pre>channel_evidence=' . print_r( $channel_evidence, true)  . "</pre>");
+                          $nid_evidence_array = array();
+                          foreach ($channel_evidence as $evidence_url) {
+
+                              watchdog("harvester", 'EVIDENCE URI:' . print_r( $evidence_url, true));
+                              $key_evidence = array_search($evidence_url, array_column($array_evidence, 'uri'));
+                              watchdog("harvester", 'key evidence =' . print_r( $key_evidence, true));
+                              if($key_evidence !== false) {
+                                  $nid_evidence = $array_evidence[$key_evidence]['nid'];
+                                  watchdog("harvester", "key evidence:" . print_r( $key_evidence, true)  . "exist already");
+                              } else {
+                                  watchdog("harvester",'CREATE EVIDENCE' . $evidence_url);
+                                  $evidence = json_decode(harvester_get_node("/v1/evidenceByURI?evidenceURI=" . urlencode($evidence_url) )->getBody() );
+                                  $evidence_id = $evidence->id;
+                                  $evidence_title = $evidence->title;
+                                  //watchdog("harvester",$evidence_title);
+                                  $nid_evidence = harvester_create_evidence($api_url.'/node',$array_session, $evidence_id, $evidence_title);
+                                  watchdog("harvester",'<pre>nid_evidence=' . print_r( $nid_evidence, true)  . "</pre>");
+                                  $array_evidence[] = array(uri => $evidence_url, nid => $nid_evidence);
+                              }
+ 
+                              $nid_evidence_array[] = $nid_evidence;
+                          }
+
+                          watchdog("harvester",'<pre>nid_evidence_array=' . print_r( $nid_evidence_array, true)  . "</pre>");
+
+
+                           $channel_id = $channel->id;
+
+                           $nid_channel = harvester_create_channel($api_url.'/node',$array_session, $channel_id, $nid_evidence_array);
+                           watchdog("harvester",'<pre>nid_channel=' . print_r( $nid_channel, true)  . "</pre>");
+                           $array_channel[] = array(uri => $channel_url, nid => $nid_channel);
+                        }
+
+                        $nid_channel_array[] = $nid_channel;
+                    }
+
+                    watchdog("harvester",'<pre>nid_channel_array=' . print_r( $nid_channel_array, true)  . "</pre>");
+
+                    // ADD CONTACT POINT
+                    $ps_contact_point = array();
+                   if(isset($ps->contactPointURI)){
+                       if(is_array($ps->contactPointURI)) {
+                          $ps_contact_point = $ps->contactPointURI;
+                       } else {
+                          $ps_contact_point[] = $ps->contactPointURI;
+                       }
+                   }
+                   watchdog("harvester",'<pre>ps_contact_point=' . print_r( $ps_contact_point, true)  . "</pre>");
+                   $nid_contact_point_array = array();
+                   foreach ($ps_contact_point as $contact_point_url) {
+ 
+                      watchdog("harvester", 'CONTACT POINT URI:' . print_r( $contact_point_url, true));
+                      $key_contact_point = array_search($contact_point_url, array_column($array_contact_point, 'uri'));
+                      watchdog("harvester", 'key contact point =' . print_r( $key_contact_point, true));
+                      if($key_contact_point !== false) {
+                           $nid_contact_point = $array_contact_point[$key_contact_point]['nid'];
+                           watchdog("harvester", "key contact point:" . print_r( $key_contact_point, true)  . "exist already");
+                      } else {
+                           watchdog("harvester",'CREATE CONTACT POINT' . $contact_point_url);
+                           $contact_point = json_decode(harvester_get_node("/v1/contactPointByURI?contactPointURI=" . urlencode($contact_point_url) )->getBody() );
+                           $contact_point_id = $contact_point->id;
+                           //watchdog("harvester",$contact_point_id);
+ 
+                           $nid_contact_point = harvester_create_contact_point($api_url.'/node',$array_session, $contact_point_id);
+                           watchdog("harvester",'<pre>nid_contact_point=' . print_r( $nid_contact_point, true)  . "</pre>");
+                           $array_contact_point[] = array(uri => $contact_point_url, nid => $nid_contact_point);
+                      }
+  
+                      $nid_contact_point_array[] = $nid_contact_point;
+                   }
+ 
+                   watchdog("harvester",'<pre>nid_contact_point_array=' . print_r( $nid_contact_point_array, true)  . "</pre>");
+
+
+
+
+
+                 // FINALLY CREATE PUBLIC SERVICE
+                 $ps_id = $ps->id;
+                 $ps_title = $ps->title;
+                 $ps_description = $ps->description;
+                 $nid_ps = harvester_create_public_service($api_url.'/node',$array_session, $nid_po, $ps_id, $ps_title, $ps_description, $nid_sector_array, $nid_type_array, $nid_language_array, $nid_event_array, $nid_evidence_array, $nid_channel_array, $nid_contact_point_array);
+                 watchdog("harvester",'<pre>nid_ps=' . print_r( $nid_ps, true)  . "</pre>");
+                 $array_ps[] = array(uri => $ps_url, nid => $nid_ps);
+
+
+                 
+            }
+
+        }
+        
+        //$uri_article = harvester_create_article($api_url.'/node',$array_session);
+        //watchdog("harvester",$uri_article);
+      
+        //$nid_location = harvester_create_location($api_url.'/node',$array_session);
+        //watchdog("harvester",$nid_location);
+        
+        //$nid_public_organisation = harvester_create_public_organisation($api_url.'/node',$array_session,$nid_location);
+	
+	//$nid_public_service = harvester_create_public_service($api_url.'/node',$array_session,$nid_public_organisation);
+
+	$logout_ok = harvester_mylogout($api_url.'/user/logout',$array_session);
+   
+ }
+        $msg_ps ="";
+        $msg_po ="";
+        $msg_loc="";
+        $msg_sector ="";
+        $msg_type = "";
+        $msg_language ="";
+        $msg_event = "";
+        $msg_evidence ="";
+        $msg_channel="";
+        $msg_contact ="";
+
+        $num_ps = count($array_ps);
+        if($num_ps > 0) {
+          $msg_ps = $num_ps . " public services, ";
+        }
+        $num_po = count($array_po);
+        if($num_po > 0) {
+          $msg_po = $num_po . " public organisations, ";
+        }
+
+        $num_loc = count($array_location);
+        if($num_loc > 0) {
+          $msg_loc = $num_loc . " locations, " ;
+        }
+
+        $num_sector = count($array_sector);
+        if($num_sector > 0) {
+          $msg_sector = $num_sector . " sectors, " ;
+        }
+
+        $num_type = count($array_type);
+        if($num_type > 0) {
+          $msg_type = $num_type . " types, " ;
+        }
+
+        $num_language = count($array_language);
+        if($num_language > 0) {
+          $msg_language = $num_language . " languages, " ;
+        }
+
+        $num_event = count($array_event);
+        if($num_event > 0) {
+          $msg_event = $num_event . " events, " ;
+        }
+
+        $num_evidence = count($array_evidence);
+        if($num_evidence > 0) {
+          $msg_evidence = $num_evidence . " evidences. " ;
+        }
+
+
+        //TO DO: like for watchdog the drupal_set_message is Deprecated in Drupal 8.50 so better encapulate in a function such as "display_message"
+        drupal_set_message('Imported successfully: ' . $msg_ps . $msg_po. $msg_loc . $msg_sector . $msg_type . $msg_language . $msg_event . $msg_evidence . 'Please check the <a href="' . $GLOBALS['base_url'] . '/admin/content">content page</a> for more information.' );
+}
+
+
+/*
+function harvester_block_view($delta=''){
+    $block['content']='<h1>Harvester Testing</h1>';
+      
+    $array_session = harvester_mylogin('http://cpsv-ap.semic.eu/cpsv-ap_editor/mytest/user/login','admin','PwC_cpsv-ap2018!');
+    if ($array_session[0] != '') {
+       dpm($array_session[0]);
+       dpm($array_session[1]);
+       dpm($array_session[2]);
+       $uri_article = harvester_create_article('http://cpsv-ap.semic.eu/cpsv-ap_editor/mytest/node',$array_session);
+       $nid_location = harvester_create_location('http://cpsv-ap.semic.eu/cpsv-ap_editor/mytest/node',$array_session);
+       $nid_public_organisation = harvester_create_public_organisation('http://cpsv-ap.semic.eu/cpsv-ap_editor/mytest/node',$array_session,$nid_location);
+ 
+      dpm($uri_article);
+      dpm($nid_location);
+     // dpm($nid_public_organisation);
+    }
+
+//    dpm($token);
+
+//    $get_node_result=harvester_get_node();
+//    dpm($get_node_result);
+//    $data=json_decode($get_node_result->getBody());
+//    dpm($data);
+//
+//   $create_node_result=apitest_create_node();
+//    dpm($create_node_result);
+
+    return $block;
+}
+*/
+
+
+function harvester_get_node($url){
+    $harvester_url = variable_get('harvester_api', CPSVAP_HARVESTER_API);
+    $client = new Client();
+    $res = $client->request('GET', $harvester_url . $url, ['http_errors' => false]);
+//  $res =  drupal_http_request($url);
+    return $res;
+}
+
+function harvester_create_article($url, $array_session){
+        $headers = [
+             'Accept' => 'application/json',
+             'Content-Type' => 'application/json',
+             'X-CSRF-Token' => $array_session[0],
+             'Cookie' => ''.$array_session[1].'='.$array_session[2].''
+        ];
+        
+        $uri_article='';
+
+        $client = new Client();
+       
+
+        $data = array(
+        'title' => 'First forum post',
+        'type'=> 'article',
+        'body'=> array(
+            'und'=>array(
+                0=> array(
+                    'value'=>'This is my first forum post via httprequest.'
+                )
+            )
+        )
+    );
+       $res= '';
+       try {
+        $res = $client->request('POST', $url,  ['headers' => $headers, 'body' => json_encode($data) ]);
+       } catch (Exception $e) {
+        watchdog("harvester",$e->getMessage());
+        watchdog("harvester", '<pre>' . print_r( $headers, true) . '</pre>');
+      }
+        try{
+        if($res->getStatusCode() == 200){
+            $jsonObject = json_decode($res->getBody());
+            watchdog("harvester",  '<pre>' . print_r( $jsonObject, true) . '</pre>');
+            $uri_article = $jsonObject->uri;
+        }
+        } catch (Exception $e) {
+              watchdog("harvester",$e->getMessage());
+        }
+
+        return $uri_article;
+
+}
+
+ function harvester_create_contact_point($url, $array_session, $id){
+ 
+             $headers = [
+                   'Accept' => 'application/json',
+                   'Content-Type' => 'application/json',
+                   'X-CSRF-Token' => $array_session[0],
+                   'Cookie' => ''.$array_session[1].'='.$array_session[2].''
+             ];
+ 
+             $uri_contact_point='';
+             $nid_contact_point='';
+ 
+             $client = new Client();
+
+             $data = array(
+                 'title' => $id,
+                 'type'=> 'contact_point'
+             );
+
+             $res= '';
+             try {
+                $res = $client->request('POST', $url,  ['headers' => $headers, 'body' => json_encode($data) ]);
+             } catch (Exception $e) {
+                watchdog("harvester",$e->getMessage());
+                watchdog("harvester", '<pre>' . print_r( $headers, true) . '</pre>');
+             }
+             try{
+               if($res->getStatusCode() == 200){
+                 $jsonObject = json_decode($res->getBody());
+                 watchdog("harvester",  '<pre>' . print_r( $jsonObject, true) . '</pre>');
+                  $uri_contact_point = $jsonObject->uri;
+                  $nid_contact_point = $jsonObject->nid;
+               }
+             } catch (Exception $e) {
+                  watchdog("harvester",$e->getMessage());
+             }
+
+             return $nid_contact_point;
+ 
+ }
+
+
+
+
+function harvester_create_channel($url, $array_session, $id, $evidence_array){
+
+          $headers = [
+                 'Accept' => 'application/json',
+                 'Content-Type' => 'application/json',
+                 'X-CSRF-Token' => $array_session[0],
+                 'Cookie' => ''.$array_session[1].'='.$array_session[2].''
+          ];
+ 
+            $uri_channel='';
+            $nid_channel='';
+ 
+            $client = new Client();
+
+            $data = array(
+            'title' => $id,
+            'type'=> 'channel',
+            'field_has_input'=>array(
+                       'und'=> $evidence_array
+                        )
+            );
+
+            $res= '';
+            try {
+              $res = $client->request('POST', $url,  ['headers' => $headers, 'body' => json_encode($data) ]);
+            } catch (Exception $e) {
+              watchdog("harvester",$e->getMessage());
+              watchdog("harvester", '<pre>' . print_r( $headers, true) . '</pre>');
+            }
+            try{
+             if($res->getStatusCode() == 200){
+                $jsonObject = json_decode($res->getBody());
+                watchdog("harvester",  '<pre>' . print_r( $jsonObject, true) . '</pre>');
+                $uri_channel = $jsonObject->uri;
+                $nid_channel = $jsonObject->nid;
+             }
+            } catch (Exception $e) {
+                watchdog("harvester",$e->getMessage());
+            }
+
+           return $nid_channel;
+
+}
+
+function harvester_create_evidence($url, $array_session, $id, $title){
+          $headers = [
+               'Accept' => 'application/json',
+               'Content-Type' => 'application/json',
+               'X-CSRF-Token' => $array_session[0],
+               'Cookie' => ''.$array_session[1].'='.$array_session[2].''
+          ];
+
+          $uri_evidence='';
+          $nid_evidence='';
+
+          $client = new Client();
+
+          $data = array(
+          'title' => $id,
+          'type'=> 'public_service_input',
+          'field_name'=> array(
+              'en'=>array(
+                  0=> array(
+                      'value'=>$title
+                  )
+               )
+             ),
+           "language" => "en"
+           );
+           $res= '';
+           try {
+             $res = $client->request('POST', $url,  ['headers' => $headers, 'body' => json_encode($data) ]);
+           } catch (Exception $e) {
+              watchdog("harvester",$e->getMessage());
+              watchdog("harvester", '<pre>' . print_r( $headers, true) . '</pre>');
+           }
+           try{
+             if($res->getStatusCode() == 200){
+               $jsonObject = json_decode($res->getBody());
+               watchdog("harvester",  '<pre>' . print_r( $jsonObject, true) . '</pre>');
+               $uri_evidence = $jsonObject->uri;
+               $nid_evidence = $jsonObject->nid;
+             }
+          } catch (Exception $e) {
+                watchdog("harvester",$e->getMessage());
+          }
+
+          return $nid_evidence;
+
+}
+
+
+
+function harvester_create_event($url, $array_session, $type, $id, $title){
+         $headers = [
+              'Accept' => 'application/json',
+              'Content-Type' => 'application/json',
+              'X-CSRF-Token' => $array_session[0],
+              'Cookie' => ''.$array_session[1].'='.$array_session[2].''
+         ];
+
+         $uri_event='';
+         $nid_event='';
+
+         $client = new Client();
+
+         $data = array(
+         'title' => $id,
+         'type'=> $type,
+         'field_name'=> array(
+             'en'=>array(
+                 0=> array(
+                     'value'=>$title
+                 )
+              )
+            ),
+          "language" => "en"
+          );
+          $res= '';
+          try {
+          $res = $client->request('POST', $url,  ['headers' => $headers, 'body' => json_encode($data) ]);
+          } catch (Exception $e) {
+          watchdog("harvester",$e->getMessage());
+          watchdog("harvester", '<pre>' . print_r( $headers, true) . '</pre>');
+          }
+          try{
+            if($res->getStatusCode() == 200){
+              $jsonObject = json_decode($res->getBody());
+              watchdog("harvester",  '<pre>' . print_r( $jsonObject, true) . '</pre>');
+             $uri_event = $jsonObject->uri;
+             $nid_event = $jsonObject->nid;
+            }
+         } catch (Exception $e) {
+               watchdog("harvester",$e->getMessage());
+         }
+
+         return $nid_event;
+
+}
+
+
+function harvester_create_language($url, $array_session, $title){
+           $headers = [
+               'Accept' => 'application/json',
+               'Content-Type' => 'application/json',
+               'X-CSRF-Token' => $array_session[0],
+               'Cookie' => ''.$array_session[1].'='.$array_session[2].''
+           ];
+
+           $uri_language='';
+           $nid_language='';
+
+           $client = new Client();
+
+           $data = array(
+             'title'=> $title,
+             'type'=> 'linguistic_system'
+           );
+
+           $res= '';
+           try {
+              $res = $client->request('POST', $url,  ['headers' => $headers, 'body' => json_encode($data) ]);
+           } catch (Exception $e) {
+              watchdog("harvester",$e->getMessage());
+              watchdog("harvester", '<pre>' . print_r( $headers, true) . '</pre>');
+           }
+
+           try {
+              if($res->getStatusCode() == 200){
+                $jsonObject = json_decode($res->getBody());
+                watchdog("harvester",  '<pre>' . print_r( $jsonObject, true) . '</pre>');
+                $uri_language = $jsonObject->uri;
+                $nid_language = $jsonObject->nid;
+              }
+           } catch (Exception $e) {
+              watchdog("harvester",$e->getMessage());
+           }
+
+           return $nid_language;
+}
+
+
+
+
+function harvester_create_type($url, $array_session, $title){
+          $headers = [
+              'Accept' => 'application/json',
+              'Content-Type' => 'application/json',
+              'X-CSRF-Token' => $array_session[0],
+              'Cookie' => ''.$array_session[1].'='.$array_session[2].''
+          ];
+
+          $uri_type='';
+          $nid_type='';
+
+          $client = new Client();
+
+          $data = array(
+            'title'=> $title,
+            'type'=> 'type'
+          );
+
+          $res= '';
+          try {
+             $res = $client->request('POST', $url,  ['headers' => $headers, 'body' => json_encode($data) ]);
+          } catch (Exception $e) {
+             watchdog("harvester",$e->getMessage());
+             watchdog("harvester", '<pre>' . print_r( $headers, true) . '</pre>');
+          }
+
+          try {
+             if($res->getStatusCode() == 200){
+               $jsonObject = json_decode($res->getBody());
+               watchdog("harvester",  '<pre>' . print_r( $jsonObject, true) . '</pre>');
+               $uri_type = $jsonObject->uri;
+               $nid_type = $jsonObject->nid;
+             }
+          } catch (Exception $e) {
+             watchdog("harvester",$e->getMessage());
+          }
+
+          return $nid_type;
+}
+
+
+
+function harvester_create_sector($url, $array_session, $title){
+         $headers = [
+             'Accept' => 'application/json',
+             'Content-Type' => 'application/json',
+             'X-CSRF-Token' => $array_session[0],
+             'Cookie' => ''.$array_session[1].'='.$array_session[2].''
+         ];
+
+         $uri_sector='';
+         $nid_sector='';
+
+         $client = new Client();
+
+         $data = array(
+           'title'=> $title,
+           'type'=> 'sector'
+         );
+
+         $res= '';
+         try {
+            $res = $client->request('POST', $url,  ['headers' => $headers, 'body' => json_encode($data) ]);
+         } catch (Exception $e) {
+            watchdog("harvester",$e->getMessage());
+            watchdog("harvester", '<pre>' . print_r( $headers, true) . '</pre>');
+         }
+
+         try {
+            if($res->getStatusCode() == 200){
+              $jsonObject = json_decode($res->getBody());
+              watchdog("harvester",  '<pre>' . print_r( $jsonObject, true) . '</pre>');
+              $uri_sector = $jsonObject->uri;
+              $nid_sector = $jsonObject->nid;
+            }
+         } catch (Exception $e) {
+             watchdog("harvester",$e->getMessage());
+         }
+
+         return $nid_sector;
+
+}
+
+
+function harvester_create_location($url, $array_session, $title){
+	$headers = [
+             'Accept' => 'application/json',
+             'Content-Type' => 'application/json',
+             'X-CSRF-Token' => $array_session[0],
+             'Cookie' => ''.$array_session[1].'='.$array_session[2].''
+        ];
+
+        $uri_location='';
+	$nid_location='';
+
+        $client = new Client();
+   	
+	$data = array(
+ 	'title'=> $title,
+	'type'=> 'location'
+	);
+
+        $res= '';
+        try {
+         $res = $client->request('POST', $url,  ['headers' => $headers, 'body' => json_encode($data) ]);
+        } catch (Exception $e) {
+         watchdog("harvester",$e->getMessage());
+         watchdog("harvester", '<pre>' . print_r( $headers, true) . '</pre>');
+       }
+
+         try{
+         if($res->getStatusCode() == 200){
+             $jsonObject = json_decode($res->getBody());
+             watchdog("harvester",  '<pre>' . print_r( $jsonObject, true) . '</pre>');
+             $uri_location = $jsonObject->uri;
+	     $nid_location = $jsonObject->nid;
+         }
+         } catch (Exception $e) {
+               watchdog("harvester",$e->getMessage());
+         }
+
+         return $nid_location;
+
+}
+
+
+function harvester_create_public_organisation($url, $array_session,$nid_location, $id, $label){
+
+         $headers = [
+              'Accept' => 'application/json',
+              'Content-Type' => 'application/json',
+              'X-CSRF-Token' => $array_session[0],
+              'Cookie' => ''.$array_session[1].'='.$array_session[2].''
+         ];
+
+         $nid_public_organisation='';
+
+         $client = new Client();
+
+         $data = array(
+         'type'=> 'public_organizations',
+         'title'=> $id,
+	 'field_preferred_label'=>array(
+		'und'=>array(
+		    0=>array(
+				'value'=>$label
+		        )
+                	)
+		),
+	 'field_spatial_public_organizatio'=>array(
+			'und'=>array(
+				'nid'=>$nid_location
+				
+			)
+		)
+         );
+
+
+
+         $res= '';
+         try {
+          $res = $client->request('POST', $url,  ['headers' => $headers, 'body' => json_encode($data) ]);
+         } catch (Exception $e) {
+          watchdog("harvester",$e->getMessage());
+          watchdog("harvester", '<pre>' . print_r( $headers, true) . '</pre>');
+        }
+
+
+
+          try{
+          if($res->getStatusCode() == 200){
+              $jsonObject = json_decode($res->getBody());
+              watchdog("harvester",  '<pre>' . print_r( $jsonObject, true) . '</pre>');
+              $nid_public_organisation = $jsonObject->nid;
+          }
+          } catch (Exception $e) {
+                watchdog("harvester",$e->getMessage());
+          }
+
+          return $nid_public_organisation;
+
+}
+
+function create_associative_array($array) {
+   $new_array = array();
+   foreach ($array as $value) {
+       $new_array[] = array('nid' => $value);
+   }
+   return $new_array;
+}
+
+function harvester_create_public_service($url,$array_session,$nid_public_organisation,$id,$title,$description, $sector_array, $type_array, $language_array, $event_array, $evidence_array, $channel_array, $contact_point_array){
+
+
+$headers = [
+               'Accept' => 'application/json',
+               'Content-Type' => 'application/json',
+               'X-CSRF-Token' => $array_session[0],
+               'Cookie' => ''.$array_session[1].'='.$array_session[2].''
+          ];
+
+          $nid_public_service='';
+
+          $client = new Client();
+
+
+          $data = array(
+          'type'=> 'public_service',
+          'title'=> $id,
+          'field_name'=>array(
+                 'en'=>array(
+                     0=>array(
+                                 'value'=>$title
+                         )
+                        )
+                 ),
+          'field_description'=>array(
+                         'und'=>array(
+			0=>array(
+                                 'value'=>$description
+				)
+                         )
+                 ),
+       	
+	'field_competent_authority'=>array(
+			'und'=>array(
+				'nid'=>$nid_public_organisation
+			)
+		
+		),
+        'field_sector'=>array(
+                   'und' => $sector_array),
+
+        'field_type_public_service'=>array(
+                   'und' => $type_array),
+
+        'field_language_public_service'=>array(
+                   'und' => $language_array),
+
+        'field_ispartof'=>array(
+                   'und' => $event_array),
+          
+         'field_has_input'=>array(
+                     'und' => $evidence_array),
+
+         'field_has_channel'=>array(
+                      'und' => $channel_array),
+
+         'field_has_contact_point_rel'=>array(
+                      'und' => $contact_point_array),
+
+         'language'=>'en'
+
+	);
+	
+
+
+          $res= '';
+          try {
+          $res = $client->request('POST', $url,  ['headers' => $headers, 'body' => json_encode($data) ]);
+          } catch (Exception $e) {
+           watchdog("harvester",$e->getMessage());
+           watchdog("harvester", '<pre>' . print_r( $headers, true) . '</pre>');
+         }
+
+
+
+           try{
+           if($res->getStatusCode() == 200){
+               $jsonObject = json_decode($res->getBody());
+               watchdog("harvester",  '<pre>' . print_r( $jsonObject, true) . '</pre>');
+               $nid_public_service = $jsonObject->nid;
+           }
+           } catch (Exception $e) {
+                 watchdog("harvester",$e->getMessage());
+           }
+
+	return $nid_public_service;
+
+
+
+}
+
+
+function harvester_mylogin($login_url, $username, $password){
+        $body='{
+            "username" :"'.$username.'",
+            "password" :"'.$password.'"
+        }';
+        $headers = [
+             'Accept' => 'application/json',
+             'Content-Type' => 'application/json'
+        ];
+      
+        $client = new Client();
+        $res = $client->request('POST', $login_url,  ['headers' => $headers, 'body' => $body]);
+
+        $token='';
+        $session_name='';
+        $session_id='';
+        if($res->getStatusCode() == 200){
+            $jsonObject = json_decode($res->getBody());
+            $token = $jsonObject->token;
+            $session_name = $jsonObject->session_name;
+            $session_id = $jsonObject->sessid;
+        }
+        return array($token, $session_name, $session_id);
+}
+
+function harvester_mylogout($logout_url, $array_session){
+
+         $headers = [
+              'Accept' => 'application/json',
+              'Content-Type' => 'application/json',
+              'X-CSRF-Token' => $array_session[0],
+              'Cookie' => ''.$array_session[1].'='.$array_session[2].''
+         ];
+
+   
+         $client = new Client();
+         $res = $client->request('POST', $logout_url,  ['headers' => $headers]);
+         watchdog("harvester",$res->getBody());
+	 return $res->getBody();
+
+}
+
+function apitest_login($username,$password){
+    if(isset($_COOKIE['drupal_session_name'])&& isset($_COOKIE['drupal_session_id'])){
+        return''.$_COOKIE['drupal_session_name'].'='.$_COOKIE['drupal_session_id'].'';
+    }else{
+        $login_url='http://cpsv-ap.semic.eu/cpsv-ap_editor/mytest/user/login';
+        $user_data='{
+            "username" :"'.$username.'",
+            "password" :"'.$password.'"        
+        }';
+        $user_options=array(
+            'headers'=>array('Content-Type'=>'application/json'),
+            'method'=>'POST',
+            'data'=>$user_data
+
+        );
+        $result=drupal_http_request($login_url,$user_options);
+        if($result->code==200){
+            $user_data=json_decode($result->data);
+            setcookie('drupal_session_name',$user_data->session_name);
+            setcookie('drupal_session_id',$user_data->sessid);
+            return ''.$user_data->session_name.'='.$user_data->sessid.'';
+        }else return FALSE;
+    }
+
+}
+
+function log_message($message){
+     watchdog("harvester", '<pre>' . print_r($message, true) . '</pre>');
+ }
+
+
+
+

@@ -2014,7 +2014,8 @@ function ddebug_backtrace($return = FALSE, $pop = 0, $options = TRUE) {
       array_shift($backtrace);
     }
     $counter = count($backtrace);
-    $path = $backtrace[$counter - 1]['file'];
+    //$path = $backtrace[$counter - 1]['file'];
+    $path = !empty($backtrace[$counter - 1]['file']) ? $backtrace[$counter - 1]['file'] : '';
     $path = substr($path, 0, strlen($path) - 10);
     $paths[$path] = strlen($path) + 1;
     $paths[DRUPAL_ROOT] = strlen(DRUPAL_ROOT) + 1;

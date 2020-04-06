@@ -1,5 +1,5 @@
-.views-exposed-form .views-exposed-widget {
-  float: left; /* LTR */
+su.views-exposed-form .views-exposed-widget {
+  /* LTR */
   padding: .5em 1em 0 0; /* LTR */
 }
 
@@ -39,4 +39,101 @@
 
 .view .progress-disabled {
   float: none;
+}
+
+/*------------------------------------------------- */
+/* Changes during phase 6 CoS, update of the layout */
+/*------------------------------------------------- */
+
+/* Put the submit and reset button on the same line */
+.views-submit-button {
+float: left;
+}
+
+/* Set space between the submit and reset button on the 'browse all content' page */
+button#edit-submit-browse-all-content {
+    margin-right: 0.5em;
+}
+
+/* Set space between the submit and reset button on the 'browse public services' page */
+button#edit-submit-browse-public-services-beta {
+    margin-right: 0.5em;
+}
+
+/* Set background of the navigation bar to blue */
+.navbar-default {
+background: #00b0f0 !important;
+}
+
+/* Set the color of the menu links on top of the page to white */
+.navbar-default .navbar-nav > li > a {
+color: white !important;
+}
+
+/* Set the active menu link on top of the page to blue */
+.navbar-default .navbar-nav > li > a.active {
+color: darkblue !important;
+} 
+
+/* Set the height of the type selector on the 'browse all content' */
+select#edit-type {
+height: 60px;
+}
+
+/* Set the height of the language selector on the 'browse public services' page */
+select#edit-field-language-public-service-nid {
+height: 60px;
+}
+
+/* Set the color of the content displayed on the 'browse all content' and 'browse */
+/* public services' page to white-grey alternating */
+.views-view-grid tr:nth-child(even){
+background-color: lightgrey;
+}
+
+/* Set the title to blue */
+a.name.navbar-brand{
+color: darkblue;
+font-weight: bold;
+margin-right: 80px;
+}
+
+/* Set the width of content to the whole page */
+table.views-view-grid.cols-1 {
+    width: 100%;
+}
+
+/* In the 'Log In' page, set the width of the username input field*/
+input#edit-name {
+    width: 30em;
+}
+
+/* In the 'Log In' page, set the width of the password input field */
+input#edit-pass {
+    width: 30em;
+}
+
+/* Set the footer of Export CSV in the 'browse public services' page */
+.view-footer {
+    white-space: pre-line;
+    font-size: x-large;
+}
+
+/* Set the text of the panel on the 'home' page to center and bold */
+.panel-col-top.panel-panel {
+    text-align: center;
+    font-weight: bold;
+}
+
+/* blue border around the user menu */
+.region.region-sidebar-second.well {
+    border: 1px solid #00b0f0;
+}
+
+.display-organization {
+display:block;
+}
+
+.hide-organization {
+display:none;
 }
